@@ -37,18 +37,30 @@ data class GitHubRelease(
         return apkAsset?.browserDownloadUrl
     }
 
-    // استخراج رقم الإصدار النظيف بدون حرف 'v' إن وجد
+    // استخراج رقم الإصدار النظيف
     fun getCleanVersion(): String {
-        if (!versionName.isNullOrBlank()) return versionName.removePrefix("v").removePrefix("V").trim()
-        return tagName.removePrefix("v").removePrefix("V").trim()
+        val raw = when {
+            !versionName.isNullOrBlank() -> versionName
+            tagName.isNotBlank() -> tagName
+            name.isNotBlank() -> name
+            else -> "1.3.0"
+        }
+        return raw.removePrefix("v").removePrefix("V").trim()
     }
 
-    // الحصول على وصف التحديث
+    // رقم الإصدار للعرض
+    fun getDisplayVersion(): String {
+        val clean = getCleanVersion()
+        return "v$clean"
+    }
+
+    // وصف التحديث وملاحظات الإصدار
     fun getDisplayNotes(): String {
         return when {
-            !releaseNotes.isNullOrBlank() -> releaseNotes
-            body.isNotBlank() -> body
-            else -> "تحديث جديد يتضمن تحسينات وإصلاحات عامة."
+            !releaseNotes.isNullOrBlank() -> releaseNotes.trim()
+            body.isNotBlank() -> body.trim()
+            name.isNotBlank() -> name.trim()
+            else -> "تحديث جديد يتضمن الأيقونة الرسمية وثيم دارك مود فاخر وحماية دائمة للبيانات."
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.firstlimo.finance.ui.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -34,7 +35,7 @@ fun UpdateAvailableDialog(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     modifier = Modifier
-                        .size(40.dp)
+                        .size(42.dp)
                         .background(AccentBlue.copy(alpha = 0.2f), RoundedCornerShape(12.dp)),
                     contentAlignment = Alignment.Center
                 ) {
@@ -57,27 +58,32 @@ fun UpdateAvailableDialog(
         text = {
             Column(modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    text = "يتوفر إصدار جديد برقم (${release.getCleanVersion()}).",
-                    fontSize = 14.sp,
+                    text = "يتوفر إصدار جديد برقم (${release.getDisplayVersion()}).",
+                    fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                     color = AccentBlue
                 )
 
                 val notes = release.getDisplayNotes()
-                if (notes.isNotBlank()) {
-                    Spacer(modifier = Modifier.height(10.dp))
-                    Text(
-                        text = "ما الجديد في هذا الإصدار:",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = TextSecondary
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(
+                    text = "ما الجديد في هذا التحديث:",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = TextPrimary
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = DarkCardSurface,
+                    border = BorderStroke(1.dp, DarkCardBorder)
+                ) {
                     Text(
                         text = notes,
-                        fontSize = 12.sp,
+                        fontSize = 13.sp,
                         color = TextSecondary,
-                        maxLines = 5
+                        modifier = Modifier.padding(12.dp),
+                        lineHeight = 20.sp
                     )
                 }
 
@@ -135,7 +141,7 @@ fun UpToDateDialog(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     modifier = Modifier
-                        .size(40.dp)
+                        .size(42.dp)
                         .background(EmeraldCollection.copy(alpha = 0.2f), RoundedCornerShape(12.dp)),
                     contentAlignment = Alignment.Center
                 ) {
