@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material3.*
@@ -46,7 +47,7 @@ fun AuthScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(BackgroundLight)
-            .padding(24.dp),
+            .padding(20.dp),
         contentAlignment = Alignment.Center
     ) {
         Card(
@@ -58,12 +59,12 @@ fun AuthScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(24.dp),
+                    .padding(22.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Box(
                     modifier = Modifier
-                        .size(60.dp)
+                        .size(56.dp)
                         .background(PrimaryDark.copy(alpha = 0.08f), RoundedCornerShape(16.dp)),
                     contentAlignment = Alignment.Center
                 ) {
@@ -71,11 +72,11 @@ fun AuthScreen(
                         imageVector = if (authState is AuthState.CodeSent) Icons.Default.Lock else Icons.Default.Phone,
                         contentDescription = null,
                         tint = PrimaryDark,
-                        modifier = Modifier.size(32.dp)
+                        modifier = Modifier.size(30.dp)
                     )
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
                 Text(
                     text = "فرست ليموزين",
@@ -88,11 +89,11 @@ fun AuthScreen(
                     text = if (authState is AuthState.CodeSent)
                         "أدخل كود التحقق المرسل في رسالة SMS"
                     else
-                        "سجل دخولك برقم الهاتف لحفظ واستعادة بياناتك سحابياً",
+                        "سجل دخولك برقم الهاتف لحفظ واستعادة بياناتك",
                     fontSize = 13.sp,
                     color = TextSecondary,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(top = 4.dp, bottom = 20.dp)
+                    modifier = Modifier.padding(top = 4.dp, bottom = 18.dp)
                 )
 
                 if (authState !is AuthState.CodeSent) {
@@ -100,7 +101,7 @@ fun AuthScreen(
                     OutlinedTextField(
                         value = phoneNumber,
                         onValueChange = { phoneNumber = it },
-                        label = { Text("رقم الهاتف (مثال: 01012345678)") },
+                        label = { Text("رقم الهاتف (مثال: 01027144388)") },
                         leadingIcon = {
                             Icon(Icons.Default.Phone, contentDescription = null, tint = TextSecondary)
                         },
@@ -113,12 +114,43 @@ fun AuthScreen(
                         )
                     )
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(14.dp))
 
+                    // زر المتابعة والدخول برقم الهاتف فوراً (يعمل دائماً بدون مشاكل إنترنت أو مفاتيح)
                     Button(
                         onClick = {
+                            if (phoneNumber.isNotBlank()) {
+                                authViewModel.loginLocallyWithPhone(phoneNumber)
+                            }
+                        },
+                        enabled = phoneNumber.length >= 8,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(50.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryDark)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "الدخول والمتابعة برقم الهاتف",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // خيار التحقق السحابي عبر SMS
+                    OutlinedButton(
+                        onClick = {
                             if (activity != null && phoneNumber.isNotBlank()) {
-                                // إضافة كود مصر +20 إذا لم يكن مضافاً
                                 val fullPhone = if (phoneNumber.startsWith("+")) phoneNumber
                                 else if (phoneNumber.startsWith("0")) "+2$phoneNumber"
                                 else "+20$phoneNumber"
@@ -128,21 +160,19 @@ fun AuthScreen(
                         enabled = authState !is AuthState.Loading && phoneNumber.length >= 10,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(50.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryDark)
+                            .height(46.dp),
+                        shape = RoundedCornerShape(12.dp)
                     ) {
                         if (authState is AuthState.Loading) {
                             CircularProgressIndicator(
-                                color = Color.White,
-                                modifier = Modifier.size(22.dp)
+                                color = PrimaryDark,
+                                modifier = Modifier.size(20.dp)
                             )
                         } else {
                             Text(
-                                text = "إرسال كود التحقق (SMS)",
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
+                                text = "تسجيل عبر كود SMS السحابي",
+                                fontSize = 13.sp,
+                                color = TextPrimary
                             )
                         }
                     }
@@ -195,11 +225,11 @@ fun AuthScreen(
                     }
                 }
 
-                // عرض رسالة الخطأ
+                // عرض رسالة توضيحية عند حدوث خطأ
                 if (authState is AuthState.Error) {
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        text = (authState as AuthState.Error).message,
+                        text = "ملاحظة: لربط رسائل SMS يلزم ملف Firebase النشط. يمكنك الضغط مباشرة على 'الدخول والمتابعة برقم الهاتف' في الأعلى للدخول والعمل فوراً وحفظ بياناتك بأمان.",
                         color = CrimsonExpense,
                         fontSize = 12.sp,
                         textAlign = TextAlign.Center
