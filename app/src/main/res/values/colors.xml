@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="primary">#1E293B</color>
+    <color name="primary_variant">#0F172A</color>
+    <color name="accent">#3B82F6</color>
+    
+    <!-- Account Colors -->
+    <color name="color_collection">#10B981</color> <!-- Emerald Green -->
+    <color name="color_expense">#EF4444</color>    <!-- Bright Crimson Red -->
+    <color name="color_commission">#8B5CF6</color> <!-- Royal Purple -->
+    <color name="color_limo_net">#0284C7</color>   <!-- Deep Sky Blue -->
+    <color name="color_personal_cash">#F59E0B</color> <!-- Warm Amber/Gold -->
+    <color name="color_total_cash">#1E1B4B</color> <!-- Midnight Blue -->
+    
+    <color name="background">#F8FAFC</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="text_primary">#0F172A</color>
+    <color name="text_secondary">#64748B</color>
+</resources>

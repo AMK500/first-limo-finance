@@ -1,0 +1,44 @@
+<resources>
+    <string name="app_name">فرست ليموزين - الإدارة المالية</string>
+    <string name="dashboard_title">اللوحة الرئيسية</string>
+    
+    <!-- Account Categories -->
+    <string name="category_collection">التحصيل (فرست ليموزين)</string>
+    <string name="category_expense">المصاريف (فرست ليموزين)</string>
+    <string name="category_commission">الكوميسيون (دخل شخصي)</string>
+    <string name="category_personal_cash">النقدية (الأموال الشخصية)</string>
+    <string name="category_net_limo">صافي حساب فرست ليموزين</string>
+    <string name="category_total_liquidity">إجمالي السيولة (الحسابين معاً)</string>
+
+    <!-- Actions -->
+    <string name="action_add_collection">تحصيل جديد</string>
+    <string name="action_add_expense">مصروف ليموزين</string>
+    <string name="action_add_commission">كوميسيون سائق</string>
+    <string name="action_add_personal_deposit">إيداع نقدي شخصي</string>
+    <string name="action_add_personal_expense">مصروف نقدي شخصي</string>
+    <string name="action_save">حفظ العملية</string>
+    <string name="action_cancel">إلغاء</string>
+    <string name="action_delete">حذف</string>
+    <string name="action_edit">تعديل</string>
+    <string name="action_sync">مزامنة الآن</string>
+    <string name="action_export_excel">تصدير Excel</string>
+    <string name="action_export_pdf">تصدير PDF</string>
+
+    <!-- Dialogs & Prompts -->
+    <string name="prompt_amount">المبلغ (ج.م)</string>
+    <string name="prompt_notes">التفاصيل أو الملاحظات</string>
+    <string name="prompt_date">التاريخ</string>
+    <string name="prompt_time">الوقت</string>
+    
+    <!-- Updates -->
+    <string name="update_available_title">تحديث جديد متوفر!</string>
+    <string name="update_available_desc">يتوفر إصدار جديد من التطبيق برقم %1$s. هل ترغب في التحميل والتحديث الآن؟</string>
+    <string name="action_update_now">تحديث الآن</string>
+    <string name="action_update_later">لاحقاً</string>
+    <string name="updating_progress">جارِ تحميل التحديث... %1$d%%</string>
+
+    <!-- Status -->
+    <string name="status_online">متصل سحابياً</string>
+    <string name="status_offline">وضع غير متصل</string>
+    <string name="status_syncing">جارِ المزامنة...</string>
+</resources>
