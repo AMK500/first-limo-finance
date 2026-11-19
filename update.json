@@ -1,7 +1,7 @@
 {
-  "versionCode": 1,
-  "versionName": "1.0.0",
-  "downloadUrl": "https://github.com/AMK500/first-limo-finance/releases/download/v1.0.0/FirstLimoFinance.apk",
-  "releaseNotes": "الإصدار الأول: إدارة تحصيل ومصاريف فرست ليموزين والنقدية الشخصية وحساب السائق المستقل مع المزامنة السحابية والتحديثات الذاتية.",
-  "publishedAt": "2026-11-19"
+  "versionCode": 3,
+  "versionName": "1.2.0",
+  "downloadUrl": "https://github.com/AMK500/first-limo-finance/releases/download/v1.2/FirstLimoFinance.apk",
+  "releaseNotes": "الإصدار v1.2: فتح التطبيق الفوري برقم الهاتف دون أي توقف، ومعالجة تنبيهات التحديث لتتطابق تلقائياً مع الإصدار الأخير.",
+  "publishedAt": "2026-11-20"
 }

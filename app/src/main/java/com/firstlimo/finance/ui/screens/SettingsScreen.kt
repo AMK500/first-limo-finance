@@ -123,11 +123,11 @@ fun SettingsScreen(
                 Column {
                     SettingsRow(
                         title = "التحقق من وجود تحديث جديد",
-                        subtitle = "فحص التحديثات المباشرة عبر GitHub (الإصدار الحالي: 1.0.0)",
+                        subtitle = "فحص التحديثات المباشرة عبر GitHub (الإصدار الحالي: ${financialViewModel.currentAppVersion})",
                         icon = Icons.Default.SystemUpdate,
                         iconColor = AccentBlue
                     ) {
-                        financialViewModel.checkForAppUpdates("1.0.0")
+                        financialViewModel.checkForAppUpdates(isManualCheck = true)
                     }
 
                     HorizontalDivider(color = CardBorder.copy(alpha = 0.5f))

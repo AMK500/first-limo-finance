@@ -119,14 +119,17 @@ fun AuthScreen(
                     // زر المتابعة والدخول برقم الهاتف فوراً (يعمل دائماً بدون مشاكل إنترنت أو مفاتيح)
                     Button(
                         onClick = {
-                            if (phoneNumber.isNotBlank()) {
-                                authViewModel.loginLocallyWithPhone(phoneNumber)
+                            val cleanPhone = phoneNumber.trim()
+                            if (cleanPhone.isNotBlank()) {
+                                val uid = "user_$cleanPhone"
+                                authViewModel.loginLocallyWithPhone(cleanPhone)
+                                onAuthSuccess(uid)
                             }
                         },
-                        enabled = phoneNumber.length >= 8,
+                        enabled = phoneNumber.trim().length >= 8,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(50.dp),
+                            .height(52.dp),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = PrimaryDark)
                     ) {
@@ -134,12 +137,12 @@ fun AuthScreen(
                             imageVector = Icons.Default.CheckCircle,
                             contentDescription = null,
                             tint = Color.White,
-                            modifier = Modifier.size(18.dp)
+                            modifier = Modifier.size(20.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = "الدخول والمتابعة برقم الهاتف",
-                            fontSize = 15.sp,
+                            fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
                         )

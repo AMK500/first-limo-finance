@@ -1,6 +1,7 @@
 package com.firstlimo.finance.ui.viewmodel
 
 import android.app.Application
+import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.firstlimo.finance.data.local.AppDatabase
@@ -23,6 +24,15 @@ class FinancialViewModel(application: Application) : AndroidViewModel(applicatio
     private val repository = FinancialRepository(database.transactionDao(), firestoreSyncService)
     private val networkMonitor = NetworkMonitor(application)
     private val updateService = GitHubUpdateService()
+    private val prefs = application.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
+
+    val currentAppVersion: String
+        get() = try {
+            val pInfo = getApplication<Application>().packageManager.getPackageInfo(getApplication<Application>().packageName, 0)
+            pInfo.versionName ?: "1.1.0"
+        } catch (e: Exception) {
+            "1.1.0"
+        }
 
     // هوية المستخدم الحالي
     private val _currentUserId = MutableStateFlow<String>("")
@@ -126,14 +136,27 @@ class FinancialViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     // فحص التحديثات من GitHub
-    fun checkForAppUpdates(currentVersion: String = "1.0.0") {
+    fun checkForAppUpdates(isManualCheck: Boolean = false) {
         viewModelScope.launch {
-            val release = updateService.checkForUpdate(currentVersion)
-            _availableUpdate.value = release
+            val release = updateService.checkForUpdate(currentAppVersion)
+            if (release != null) {
+                val dismissedVersion = prefs.getString("dismissed_update_version", null)
+                // إذا كان المستخدم قد اختار 'لاحقاً' لنفس الإصدار، لا نكرر التنبيه تلقائياً إلا إذا ضغط فحص يدوي
+                if (!isManualCheck && dismissedVersion == release.getCleanVersion()) {
+                    return@launch
+                }
+                _availableUpdate.value = release
+            } else {
+                _availableUpdate.value = null
+            }
         }
     }
 
     fun dismissUpdateDialog() {
+        val release = _availableUpdate.value
+        if (release != null) {
+            prefs.edit().putString("dismissed_update_version", release.getCleanVersion()).apply()
+        }
         _availableUpdate.value = null
         _downloadProgress.value = null
     }
