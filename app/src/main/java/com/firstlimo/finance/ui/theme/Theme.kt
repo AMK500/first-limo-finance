@@ -1,19 +1,20 @@
 package com.firstlimo.finance.ui.theme
 
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 
-private val LightColorScheme = lightColorScheme(
-    primary = Primary,
-    onPrimary = SurfaceWhite,
-    primaryContainer = PrimaryLight,
-    secondary = AccentBlue,
-    background = BackgroundLight,
-    surface = SurfaceWhite,
+private val DarkColorScheme = darkColorScheme(
+    primary = AccentBlue,
+    onPrimary = DarkBackground,
+    primaryContainer = DarkSurface,
+    secondary = AccentGold,
+    background = DarkBackground,
+    surface = DarkSurface,
+    surfaceVariant = DarkCardSurface,
     onBackground = TextPrimary,
     onSurface = TextPrimary
 )
@@ -22,10 +23,10 @@ private val LightColorScheme = lightColorScheme(
 fun FirstLimoFinanceTheme(
     content: @Composable () -> Unit
 ) {
-    // تطبيق الاتجاه العربي RTL بشكل افتراضي وشامل
+    // تطبيق الوضع الداكن الفاخر (Dark Mode) والاتجاه العربي RTL بشكل أصيل وشامل
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         MaterialTheme(
-            colorScheme = LightColorScheme,
+            colorScheme = DarkColorScheme,
             typography = Typography,
             content = content
         )

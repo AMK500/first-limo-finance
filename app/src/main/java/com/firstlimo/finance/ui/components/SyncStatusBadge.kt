@@ -17,6 +17,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.firstlimo.finance.ui.theme.DarkCardBorder
+import com.firstlimo.finance.ui.theme.DarkCardSurface
 import com.firstlimo.finance.ui.theme.EmeraldCollection
 import com.firstlimo.finance.ui.theme.TextSecondary
 
@@ -28,21 +30,21 @@ fun SyncStatusBadge(
     modifier: Modifier = Modifier
 ) {
     val statusColor = when {
-        isSyncing -> Color(0xFF3B82F6) // Blue
+        isSyncing -> Color(0xFF38BDF8) // Cyan
         isOnline -> EmeraldCollection    // Green
-        else -> Color(0xFFF59E0B)        // Amber (Offline)
+        else -> Color(0xFFF59E0B)        // Amber
     }
 
     val statusText = when {
         isSyncing -> "جارِ المزامنة..."
         isOnline -> "سحابي متصل"
-        else -> "وضع بدون إنترنت"
+        else -> "حفظ محلي آمن"
     }
 
     Row(
         modifier = modifier
             .clip(RoundedCornerShape(20.dp))
-            .background(Color.White)
+            .background(DarkCardSurface)
             .clickable { onManualSync() }
             .padding(horizontal = 10.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -63,7 +65,7 @@ fun SyncStatusBadge(
         Spacer(modifier = Modifier.width(4.dp))
         Icon(
             imageVector = Icons.Default.Sync,
-            contentDescription = "مزامنة يدوية",
+            contentDescription = "مزامنة",
             modifier = Modifier.size(13.dp),
             tint = TextSecondary
         )

@@ -12,6 +12,7 @@ import com.firstlimo.finance.data.model.TransactionType
 import com.firstlimo.finance.data.remote.FirestoreSyncService
 import com.firstlimo.finance.data.remote.GitHubUpdateService
 import com.firstlimo.finance.data.repository.FinancialRepository
+import com.firstlimo.finance.utils.BackupManager
 import com.firstlimo.finance.utils.InstallerUtils
 import com.firstlimo.finance.utils.NetworkMonitor
 import kotlinx.coroutines.flow.*
@@ -21,7 +22,7 @@ class FinancialViewModel(application: Application) : AndroidViewModel(applicatio
 
     private val database = AppDatabase.getDatabase(application)
     private val firestoreSyncService = FirestoreSyncService()
-    private val repository = FinancialRepository(database.transactionDao(), firestoreSyncService)
+    private val repository = FinancialRepository(database.transactionDao(), firestoreSyncService, application)
     private val networkMonitor = NetworkMonitor(application)
     private val updateService = GitHubUpdateService()
     private val prefs = application.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
@@ -29,9 +30,9 @@ class FinancialViewModel(application: Application) : AndroidViewModel(applicatio
     val currentAppVersion: String
         get() = try {
             val pInfo = getApplication<Application>().packageManager.getPackageInfo(getApplication<Application>().packageName, 0)
-            pInfo.versionName ?: "1.1.0"
+            pInfo.versionName ?: "1.3.0"
         } catch (e: Exception) {
-            "1.1.0"
+            "1.3.0"
         }
 
     // هوية المستخدم الحالي
@@ -64,14 +65,35 @@ class FinancialViewModel(application: Application) : AndroidViewModel(applicatio
     private val _availableUpdate = MutableStateFlow<GitHubRelease?>(null)
     val availableUpdate: StateFlow<GitHubRelease?> = _availableUpdate
 
+    private val _showUpToDateDialog = MutableStateFlow(false)
+    val showUpToDateDialog: StateFlow<Boolean> = _showUpToDateDialog
+
     private val _downloadProgress = MutableStateFlow<Int?>(null)
     val downloadProgress: StateFlow<Int?> = _downloadProgress
+
+    // حالة النسخ الاحتياطي
+    private val _backupStatusMessage = MutableStateFlow<String?>(null)
+    val backupStatusMessage: StateFlow<String?> = _backupStatusMessage
 
     fun setUserId(userId: String) {
         _currentUserId.value = userId
         if (userId.isNotEmpty()) {
             listenToRemoteSync(userId)
             syncUnsynced(userId)
+            // فحص هل توجد نسخة احتياطية محلية لاستعادتها تلقائياً إذا كانت قاعدة البيانات فارغة
+            checkAndRestoreInitialBackup(userId)
+        }
+    }
+
+    private fun checkAndRestoreInitialBackup(userId: String) {
+        viewModelScope.launch {
+            val currentList = repository.getTransactions(userId).firstOrNull() ?: emptyList()
+            if (currentList.isEmpty()) {
+                val restored = BackupManager.restoreBackup(getApplication(), userId)
+                if (!restored.isNullOrEmpty()) {
+                    repository.restoreTransactionsFromBackup(restored)
+                }
+            }
         }
     }
 
@@ -135,19 +157,52 @@ class FinancialViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
+    // استرجاع النسخة الاحتياطية يدوياً
+    fun restoreFromBackup() {
+        viewModelScope.launch {
+            val restored = BackupManager.restoreBackup(getApplication(), _currentUserId.value)
+            if (!restored.isNullOrEmpty()) {
+                repository.restoreTransactionsFromBackup(restored)
+                _backupStatusMessage.value = "تم استرجاع ${restored.size} عملية بنجاح! ✅"
+            } else {
+                _backupStatusMessage.value = "لم يتم العثور على نسخة احتياطية سابقة."
+            }
+        }
+    }
+
+    // إنشاء نسخة احتياطية يدوية
+    fun createBackup() {
+        viewModelScope.launch {
+            val list = transactions.value
+            val file = BackupManager.autoSaveBackup(getApplication(), list, _currentUserId.value)
+            if (file != null) {
+                _backupStatusMessage.value = "تم حفظ النسخة الاحتياطية بنجاح على الهاتف! 📁"
+            } else {
+                _backupStatusMessage.value = "تعذر حفظ النسخة الاحتياطية."
+            }
+        }
+    }
+
+    fun clearBackupMessage() {
+        _backupStatusMessage.value = null
+    }
+
     // فحص التحديثات من GitHub
     fun checkForAppUpdates(isManualCheck: Boolean = false) {
         viewModelScope.launch {
             val release = updateService.checkForUpdate(currentAppVersion)
             if (release != null) {
                 val dismissedVersion = prefs.getString("dismissed_update_version", null)
-                // إذا كان المستخدم قد اختار 'لاحقاً' لنفس الإصدار، لا نكرر التنبيه تلقائياً إلا إذا ضغط فحص يدوي
                 if (!isManualCheck && dismissedVersion == release.getCleanVersion()) {
                     return@launch
                 }
                 _availableUpdate.value = release
+                _showUpToDateDialog.value = false
             } else {
                 _availableUpdate.value = null
+                if (isManualCheck) {
+                    _showUpToDateDialog.value = true
+                }
             }
         }
     }
@@ -159,6 +214,10 @@ class FinancialViewModel(application: Application) : AndroidViewModel(applicatio
         }
         _availableUpdate.value = null
         _downloadProgress.value = null
+    }
+
+    fun dismissUpToDateDialog() {
+        _showUpToDateDialog.value = false
     }
 
     fun startInAppUpdate() {

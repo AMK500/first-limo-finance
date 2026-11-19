@@ -1,5 +1,6 @@
 package com.firstlimo.finance.ui.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -47,9 +48,10 @@ fun TransactionItem(
         modifier = modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = DarkCardSurface),
+        border = BorderStroke(1.dp, DarkCardBorder),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
             modifier = Modifier
@@ -76,7 +78,7 @@ fun TransactionItem(
                     Text(
                         text = transaction.type.titleArabic,
                         fontSize = 15.sp,
-                        fontWeight = FontWeight.SemiBold,
+                        fontWeight = FontWeight.Bold,
                         color = TextPrimary
                     )
 
@@ -94,7 +96,7 @@ fun TransactionItem(
                     Text(
                         text = "${transaction.dateString} • ${transaction.timeString}",
                         fontSize = 11.sp,
-                        color = TextSecondary.copy(alpha = 0.8f)
+                        color = TextSecondary.copy(alpha = 0.7f)
                     )
                 }
             }
@@ -118,11 +120,12 @@ fun TransactionItem(
 
                     DropdownMenu(
                         expanded = showMenu,
-                        onDismissRequest = { showMenu = false }
+                        onDismissRequest = { showMenu = false },
+                        modifier = Modifier.background(DarkSurface)
                     ) {
                         DropdownMenuItem(
-                            text = { Text("تعديل") },
-                            leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) },
+                            text = { Text("تعديل", color = TextPrimary) },
+                            leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null, tint = AccentBlue) },
                             onClick = {
                                 showMenu = false
                                 onEdit(transaction)
@@ -145,8 +148,9 @@ fun TransactionItem(
     if (showDeleteConfirm) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
-            title = { Text("تأكيد الحذف") },
-            text = { Text("هل أنت متأكد من حذف هذه العملية؟ سيتم حذفها ومزامنتها عبر جميع الأجهزة.") },
+            containerColor = DarkSurface,
+            title = { Text("تأكيد الحذف", color = TextPrimary, fontWeight = FontWeight.Bold) },
+            text = { Text("هل أنت متأكد من حذف هذه العملية؟ سيتم تحديث الأرصدة فوراً.", color = TextSecondary) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -159,7 +163,7 @@ fun TransactionItem(
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteConfirm = false }) {
-                    Text("إلغاء")
+                    Text("إلغاء", color = TextSecondary)
                 }
             }
         )

@@ -41,9 +41,9 @@ fun DashboardScreen(
     var selectedSheetType by remember { mutableStateOf(TransactionType.COLLECTION) }
     var editingTransaction by remember { mutableStateOf<FinancialTransaction?>(null) }
 
-    // فحص التحديثات عند بدء الشاشة
+    // فحص التحديثات بهدوء عند بدء الشاشة
     LaunchedEffect(Unit) {
-        viewModel.checkForAppUpdates()
+        viewModel.checkForAppUpdates(isManualCheck = false)
     }
 
     Scaffold(
@@ -53,14 +53,14 @@ fun DashboardScreen(
                     Column {
                         Text(
                             text = "فرست ليموزين",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            fontSize = 19.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = TextPrimary
                         )
                         Text(
                             text = "الإدارة المالية وحساب النقدية",
                             fontSize = 11.sp,
-                            color = Color.White.copy(alpha = 0.8f)
+                            color = TextSecondary
                         )
                     }
                 },
@@ -75,23 +75,23 @@ fun DashboardScreen(
                         Icon(
                             imageVector = Icons.Default.ReceiptLong,
                             contentDescription = "سجل العمليات",
-                            tint = Color.White
+                            tint = TextPrimary
                         )
                     }
                     IconButton(onClick = onNavigateToSettings) {
                         Icon(
                             imageVector = Icons.Default.Settings,
                             contentDescription = "الإعدادات",
-                            tint = Color.White
+                            tint = TextPrimary
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = PrimaryDark
+                    containerColor = DarkSurface
                 )
             )
         },
-        containerColor = BackgroundLight
+        containerColor = DarkBackground
     ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
@@ -130,9 +130,9 @@ fun DashboardScreen(
             item {
                 BalanceCard(
                     title = "إجمالي السيولة (الحسابين معاً)",
-                    subtitle = "إجمالي الأموال المتاحة حالياً",
+                    subtitle = "إجمالي النقدية المتاحة حالياً",
                     amount = summary.totalOverallLiquidity,
-                    cardColor = NavyTotalLiquidity,
+                    cardColor = IndigoTotalLiquidity,
                     icon = Icons.Default.Savings,
                     isLarge = false
                 )
@@ -341,21 +341,22 @@ fun BalanceMiniCard(
 ) {
     Card(
         modifier = modifier,
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = DarkCardSurface),
+        border = androidx.compose.foundation.BorderStroke(1.dp, DarkCardBorder),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
-            modifier = Modifier.padding(10.dp),
+            modifier = Modifier.padding(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Box(
                 modifier = Modifier
-                    .size(28.dp)
-                    .background(color.copy(alpha = 0.15f), RoundedCornerShape(8.dp)),
+                    .size(32.dp)
+                    .background(color.copy(alpha = 0.15f), RoundedCornerShape(10.dp)),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(16.dp))
+                Icon(icon, contentDescription = null, tint = color, modifier = Modifier.size(18.dp))
             }
             Spacer(modifier = Modifier.height(6.dp))
             Text(text = title, fontSize = 11.sp, color = TextSecondary)
@@ -380,7 +381,7 @@ fun QuickActionButton(
     Button(
         onClick = onClick,
         modifier = modifier.height(48.dp),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(14.dp),
         colors = ButtonDefaults.buttonColors(containerColor = color)
     ) {
         Text(

@@ -2,22 +2,23 @@ package com.firstlimo.finance.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val PrimaryDark = Color(0xFF0F172A)
-val Primary = Color(0xFF1E293B)
-val PrimaryLight = Color(0xFF334155)
+// الفخامة الداكنة (Luxury Dark Palette)
+val DarkBackground = Color(0xFF090D16)      // أسود كربوني فخم
+val DarkSurface = Color(0xFF111726)         // رمادي داكن مائل للكحلي
+val DarkCardSurface = Color(0xFF161E30)     // بطاقات ناعمة ومرتفعة
+val DarkCardBorder = Color(0xFF232D42)      // حدود رقيقة متألقة
 
-val AccentBlue = Color(0xFF2563EB)
-val BackgroundLight = Color(0xFFF8FAFC)
-val SurfaceWhite = Color(0xFFFFFFFF)
+val TextPrimary = Color(0xFFF8FAFC)         // أبيض ناصع ومريح
+val TextSecondary = Color(0xFF94A3B8)       // رمادي فاتح مقروء
+val TextTertiary = Color(0xFF64748B)
 
-// ألوان الحسابات المميزة
-val EmeraldCollection = Color(0xFF059669)      // أخضر التحصيل
-val CrimsonExpense = Color(0xFFDC2626)         // أحمر المصاريف
-val PurpleCommission = Color(0xFF7C3AED)       // بنفسجي الكوميسيون (دخل شخصي)
-val BlueLimoNet = Color(0xFF0284C7)            // أزرق صافي فرست ليموزين
-val AmberPersonalCash = Color(0xFFD97706)      // ذهبي/برتقالي النقدية الشخصية
-val NavyTotalLiquidity = Color(0xFF1E1B4B)     // كحلي إجمالي السيولة
+// ألوان الحسابات الفاخرة (Vibrant Neon Glow)
+val EmeraldCollection = Color(0xFF10B981)   // أخضر زمردي مشرق (تحصيل)
+val CrimsonExpense = Color(0xFFF43F5E)      // وردي أحمر ناصع (مصاريف)
+val PurpleCommission = Color(0xFFA855F7)    // بنفسجي إمبراطوري (كوميسيون)
+val BlueLimoNet = Color(0xFF0EA5E9)         // أزرق سماوي نيون (صافي ليموزين)
+val AmberPersonalCash = Color(0xFFF59E0B)   // ذهبي دافئ فاخر (نقدية شخصية)
+val IndigoTotalLiquidity = Color(0xFF6366F1)// نيلي ملكي (إجمالي السيولة)
 
-val TextPrimary = Color(0xFF0F172A)
-val TextSecondary = Color(0xFF64748B)
-val CardBorder = Color(0xFFE2E8F0)
+val AccentGold = Color(0xFFF59E0B)
+val AccentBlue = Color(0xFF38BDF8)

@@ -39,7 +39,7 @@ fun AddTransactionSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        containerColor = Color.White,
+        containerColor = DarkSurface,
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
     ) {
         Column(
@@ -60,7 +60,7 @@ fun AddTransactionSheet(
                     color = TextPrimary
                 )
                 IconButton(onClick = onDismiss) {
-                    Icon(Icons.Default.Close, contentDescription = "إغلاق")
+                    Icon(Icons.Default.Close, contentDescription = "إغلاق", tint = TextSecondary)
                 }
             }
 
@@ -131,15 +131,19 @@ fun AddTransactionSheet(
                     amountText = it
                     errorMessage = null
                 },
-                label = { Text("المبلغ (ج.م)") },
-                placeholder = { Text("0.00") },
+                label = { Text("المبلغ (ج.م)", color = TextSecondary) },
+                placeholder = { Text("0.00", color = TextTertiary) },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
                 isError = errorMessage != null,
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = AccentBlue,
-                    unfocusedBorderColor = CardBorder
+                    unfocusedBorderColor = DarkCardBorder,
+                    focusedTextColor = TextPrimary,
+                    unfocusedTextColor = TextPrimary,
+                    focusedContainerColor = DarkCardSurface,
+                    unfocusedContainerColor = DarkCardSurface
                 )
             )
 
@@ -162,24 +166,32 @@ fun AddTransactionSheet(
                 OutlinedTextField(
                     value = dateText,
                     onValueChange = { dateText = it },
-                    label = { Text("التاريخ") },
+                    label = { Text("التاريخ", color = TextSecondary) },
                     singleLine = true,
                     modifier = Modifier.weight(1f),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = AccentBlue,
-                        unfocusedBorderColor = CardBorder
+                        unfocusedBorderColor = DarkCardBorder,
+                        focusedTextColor = TextPrimary,
+                        unfocusedTextColor = TextPrimary,
+                        focusedContainerColor = DarkCardSurface,
+                        unfocusedContainerColor = DarkCardSurface
                     )
                 )
 
                 OutlinedTextField(
                     value = timeText,
                     onValueChange = { timeText = it },
-                    label = { Text("الوقت") },
+                    label = { Text("الوقت", color = TextSecondary) },
                     singleLine = true,
                     modifier = Modifier.weight(1f),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = AccentBlue,
-                        unfocusedBorderColor = CardBorder
+                        unfocusedBorderColor = DarkCardBorder,
+                        focusedTextColor = TextPrimary,
+                        unfocusedTextColor = TextPrimary,
+                        focusedContainerColor = DarkCardSurface,
+                        unfocusedContainerColor = DarkCardSurface
                     )
                 )
             }
@@ -190,19 +202,23 @@ fun AddTransactionSheet(
             OutlinedTextField(
                 value = notesText,
                 onValueChange = { notesText = it },
-                label = { Text("التفاصيل أو الملاحظات (اختياري)") },
-                placeholder = { Text("مثال: بنزين، غسيل، رقم الرحلة...") },
+                label = { Text("التفاصيل أو الملاحظات (اختياري)", color = TextSecondary) },
+                placeholder = { Text("مثال: بنزين، غسيل، رقم الرحلة...", color = TextTertiary) },
                 modifier = Modifier.fillMaxWidth(),
                 maxLines = 3,
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = AccentBlue,
-                    unfocusedBorderColor = CardBorder
+                    unfocusedBorderColor = DarkCardBorder,
+                    focusedTextColor = TextPrimary,
+                    unfocusedTextColor = TextPrimary,
+                    focusedContainerColor = DarkCardSurface,
+                    unfocusedContainerColor = DarkCardSurface
                 )
             )
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // زر الحفظ
+            // زر الحفظ الفخم
             Button(
                 onClick = {
                     val amount = amountText.toDoubleOrNull()
@@ -215,14 +231,14 @@ fun AddTransactionSheet(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = PrimaryDark)
+                shape = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = AccentBlue)
             ) {
                 Text(
                     text = if (editingTransaction != null) "تحديث العملية" else "حفظ العملية",
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    color = DarkBackground
                 )
             }
 
@@ -242,9 +258,9 @@ fun TypeChip(
     Surface(
         modifier = modifier
             .clickable { onClick() },
-        shape = RoundedCornerShape(10.dp),
-        color = if (isSelected) color.copy(alpha = 0.15f) else Color(0xFFF1F5F9),
-        border = if (isSelected) androidx.compose.foundation.BorderStroke(1.5.dp, color) else null
+        shape = RoundedCornerShape(12.dp),
+        color = if (isSelected) color.copy(alpha = 0.2f) else DarkCardSurface,
+        border = if (isSelected) androidx.compose.foundation.BorderStroke(1.5.dp, color) else androidx.compose.foundation.BorderStroke(1.dp, DarkCardBorder)
     ) {
         Box(
             modifier = Modifier.padding(vertical = 10.dp, horizontal = 12.dp),
@@ -253,8 +269,8 @@ fun TypeChip(
             Text(
                 text = title,
                 fontSize = 13.sp,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                color = if (isSelected) color else TextPrimary
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                color = if (isSelected) color else TextSecondary
             )
         }
     }

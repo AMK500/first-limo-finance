@@ -1,14 +1,17 @@
 package com.firstlimo.finance.ui.screens
 
 import android.app.Activity
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -46,42 +49,43 @@ fun AuthScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(BackgroundLight)
+            .background(DarkBackground)
             .padding(20.dp),
         contentAlignment = Alignment.Center
     ) {
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = DarkCardSurface),
+            border = BorderStroke(1.dp, DarkCardBorder),
+            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(22.dp),
+                    .padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Box(
                     modifier = Modifier
-                        .size(56.dp)
-                        .background(PrimaryDark.copy(alpha = 0.08f), RoundedCornerShape(16.dp)),
+                        .size(64.dp)
+                        .background(AccentBlue.copy(alpha = 0.15f), RoundedCornerShape(18.dp)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        imageVector = if (authState is AuthState.CodeSent) Icons.Default.Lock else Icons.Default.Phone,
+                        imageVector = Icons.Default.DirectionsCar,
                         contentDescription = null,
-                        tint = PrimaryDark,
-                        modifier = Modifier.size(30.dp)
+                        tint = AccentBlue,
+                        modifier = Modifier.size(36.dp)
                     )
                 }
 
-                Spacer(modifier = Modifier.height(14.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
                     text = "فرست ليموزين",
-                    fontSize = 22.sp,
-                    fontWeight = FontWeight.Bold,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.ExtraBold,
                     color = TextPrimary
                 )
 
@@ -89,11 +93,11 @@ fun AuthScreen(
                     text = if (authState is AuthState.CodeSent)
                         "أدخل كود التحقق المرسل في رسالة SMS"
                     else
-                        "سجل دخولك برقم الهاتف لحفظ واستعادة بياناتك",
+                        "سجل دخولك برقم الهاتف لحفظ واستعادة بياناتك دائماً",
                     fontSize = 13.sp,
                     color = TextSecondary,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(top = 4.dp, bottom = 18.dp)
+                    modifier = Modifier.padding(top = 6.dp, bottom = 22.dp)
                 )
 
                 if (authState !is AuthState.CodeSent) {
@@ -101,22 +105,26 @@ fun AuthScreen(
                     OutlinedTextField(
                         value = phoneNumber,
                         onValueChange = { phoneNumber = it },
-                        label = { Text("رقم الهاتف (مثال: 01027144388)") },
+                        label = { Text("رقم الهاتف (مثال: 01027144388)", color = TextSecondary) },
                         leadingIcon = {
-                            Icon(Icons.Default.Phone, contentDescription = null, tint = TextSecondary)
+                            Icon(Icons.Default.Phone, contentDescription = null, tint = AccentBlue)
                         },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = AccentBlue,
-                            unfocusedBorderColor = CardBorder
+                            unfocusedBorderColor = DarkCardBorder,
+                            focusedTextColor = TextPrimary,
+                            unfocusedTextColor = TextPrimary,
+                            focusedContainerColor = DarkSurface,
+                            unfocusedContainerColor = DarkSurface
                         )
                     )
 
-                    Spacer(modifier = Modifier.height(14.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                    // زر المتابعة والدخول برقم الهاتف فوراً (يعمل دائماً بدون مشاكل إنترنت أو مفاتيح)
+                    // زر المتابعة والدخول برقم الهاتف فوراً (يعمل دائماً وبأمان تام دون أي تعليق)
                     Button(
                         onClick = {
                             val cleanPhone = phoneNumber.trim()
@@ -130,13 +138,13 @@ fun AuthScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(52.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = PrimaryDark)
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = AccentBlue)
                     ) {
                         Icon(
                             imageVector = Icons.Default.CheckCircle,
                             contentDescription = null,
-                            tint = Color.White,
+                            tint = DarkBackground,
                             modifier = Modifier.size(20.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
@@ -144,11 +152,11 @@ fun AuthScreen(
                             text = "الدخول والمتابعة برقم الهاتف",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
-                            color = Color.White
+                            color = DarkBackground
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
 
                     // خيار التحقق السحابي عبر SMS
                     OutlinedButton(
@@ -163,19 +171,20 @@ fun AuthScreen(
                         enabled = authState !is AuthState.Loading && phoneNumber.length >= 10,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(46.dp),
-                        shape = RoundedCornerShape(12.dp)
+                            .height(48.dp),
+                        shape = RoundedCornerShape(14.dp),
+                        border = BorderStroke(1.dp, DarkCardBorder)
                     ) {
                         if (authState is AuthState.Loading) {
                             CircularProgressIndicator(
-                                color = PrimaryDark,
+                                color = AccentBlue,
                                 modifier = Modifier.size(20.dp)
                             )
                         } else {
                             Text(
-                                text = "تسجيل عبر كود SMS السحابي",
+                                text = "تسجيل ومزامنة سحابية (SMS)",
                                 fontSize = 13.sp,
-                                color = TextPrimary
+                                color = TextSecondary
                             )
                         }
                     }
@@ -184,16 +193,20 @@ fun AuthScreen(
                     OutlinedTextField(
                         value = otpCode,
                         onValueChange = { if (it.length <= 6) otpCode = it },
-                        label = { Text("كود التحقق (6 أرقام)") },
+                        label = { Text("كود التحقق (6 أرقام)", color = TextSecondary) },
                         leadingIcon = {
-                            Icon(Icons.Default.Lock, contentDescription = null, tint = TextSecondary)
+                            Icon(Icons.Default.Lock, contentDescription = null, tint = AccentGold)
                         },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = AccentBlue,
-                            unfocusedBorderColor = CardBorder
+                            focusedBorderColor = AccentGold,
+                            unfocusedBorderColor = DarkCardBorder,
+                            focusedTextColor = TextPrimary,
+                            unfocusedTextColor = TextPrimary,
+                            focusedContainerColor = DarkSurface,
+                            unfocusedContainerColor = DarkSurface
                         )
                     )
 
@@ -208,31 +221,31 @@ fun AuthScreen(
                         enabled = authState !is AuthState.Loading && otpCode.length == 6,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(50.dp),
-                        shape = RoundedCornerShape(12.dp),
+                            .height(52.dp),
+                        shape = RoundedCornerShape(14.dp),
                         colors = ButtonDefaults.buttonColors(containerColor = EmeraldCollection)
                     ) {
                         if (authState is AuthState.Loading) {
                             CircularProgressIndicator(
-                                color = Color.White,
+                                color = DarkBackground,
                                 modifier = Modifier.size(22.dp)
                             )
                         } else {
                             Text(
-                                text = "تأكيد واسترجاع البيانات",
+                                text = "تأكيد واسترجاع البيانات سحابياً",
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color.White
+                                color = DarkBackground
                             )
                         }
                     }
                 }
 
-                // عرض رسالة توضيحية عند حدوث خطأ
+                // عرض رسالة توضيحية عند حدوث خطأ في SMS
                 if (authState is AuthState.Error) {
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        text = "ملاحظة: لربط رسائل SMS يلزم ملف Firebase النشط. يمكنك الضغط مباشرة على 'الدخول والمتابعة برقم الهاتف' في الأعلى للدخول والعمل فوراً وحفظ بياناتك بأمان.",
+                        text = "ملاحظة: لربط رسائل SMS السحابية يلزم تفعيل Firebase. يمكنك الضغط مباشرة على زر 'الدخول والمتابعة برقم الهاتف' في الأعلى للدخول فوراً وحفظ بياناتك.",
                         color = CrimsonExpense,
                         fontSize = 12.sp,
                         textAlign = TextAlign.Center

@@ -63,7 +63,7 @@ fun TransactionsHistoryScreen(
                         text = "سجل العمليات (${filteredTransactions.size})",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = TextPrimary
                     )
                 },
                 navigationIcon = {
@@ -71,7 +71,7 @@ fun TransactionsHistoryScreen(
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
                             contentDescription = "رجوع",
-                            tint = Color.White
+                            tint = TextPrimary
                         )
                     }
                 },
@@ -87,14 +87,14 @@ fun TransactionsHistoryScreen(
                         Icon(
                             imageVector = Icons.Default.FileDownload,
                             contentDescription = "تصدير كشف الحساب",
-                            tint = Color.White
+                            tint = AccentBlue
                         )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = PrimaryDark)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = DarkSurface)
             )
         },
-        containerColor = BackgroundLight
+        containerColor = DarkBackground
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -105,25 +105,27 @@ fun TransactionsHistoryScreen(
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
-                placeholder = { Text("بحث في الملاحظات، المبالغ، التواريخ...") },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = TextSecondary) },
+                placeholder = { Text("بحث في الملاحظات، المبالغ، التواريخ...", color = TextTertiary) },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = AccentBlue) },
                 trailingIcon = {
                     if (searchQuery.isNotEmpty()) {
                         IconButton(onClick = { searchQuery = "" }) {
-                            Icon(Icons.Default.Clear, contentDescription = "مسح")
+                            Icon(Icons.Default.Clear, contentDescription = "مسح", tint = TextSecondary)
                         }
                     }
                 },
                 singleLine = true,
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(14.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = AccentBlue,
-                    unfocusedBorderColor = CardBorder,
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White
+                    unfocusedBorderColor = DarkCardBorder,
+                    focusedTextColor = TextPrimary,
+                    unfocusedTextColor = TextPrimary,
+                    focusedContainerColor = DarkCardSurface,
+                    unfocusedContainerColor = DarkCardSurface
                 )
             )
 
@@ -138,32 +140,68 @@ fun TransactionsHistoryScreen(
                 FilterChip(
                     selected = selectedFilterType == null,
                     onClick = { selectedFilterType = null },
-                    label = { Text("الكل") }
+                    label = { Text("الكل") },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = AccentBlue.copy(alpha = 0.2f),
+                        selectedLabelColor = AccentBlue,
+                        containerColor = DarkCardSurface,
+                        labelColor = TextSecondary
+                    )
                 )
                 FilterChip(
                     selected = selectedFilterType == TransactionType.COLLECTION,
                     onClick = { selectedFilterType = TransactionType.COLLECTION },
-                    label = { Text("تحصيل ليموزين") }
+                    label = { Text("تحصيل ليموزين") },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = EmeraldCollection.copy(alpha = 0.2f),
+                        selectedLabelColor = EmeraldCollection,
+                        containerColor = DarkCardSurface,
+                        labelColor = TextSecondary
+                    )
                 )
                 FilterChip(
                     selected = selectedFilterType == TransactionType.EXPENSE,
                     onClick = { selectedFilterType = TransactionType.EXPENSE },
-                    label = { Text("مصاريف ليموزين") }
+                    label = { Text("مصاريف ليموزين") },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = CrimsonExpense.copy(alpha = 0.2f),
+                        selectedLabelColor = CrimsonExpense,
+                        containerColor = DarkCardSurface,
+                        labelColor = TextSecondary
+                    )
                 )
                 FilterChip(
                     selected = selectedFilterType == TransactionType.COMMISSION,
                     onClick = { selectedFilterType = TransactionType.COMMISSION },
-                    label = { Text("الكوميسيون") }
+                    label = { Text("الكوميسيون") },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = PurpleCommission.copy(alpha = 0.2f),
+                        selectedLabelColor = PurpleCommission,
+                        containerColor = DarkCardSurface,
+                        labelColor = TextSecondary
+                    )
                 )
                 FilterChip(
                     selected = selectedFilterType == TransactionType.PERSONAL_DEPOSIT,
                     onClick = { selectedFilterType = TransactionType.PERSONAL_DEPOSIT },
-                    label = { Text("إيداع شخصي") }
+                    label = { Text("إيداع شخصي") },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = AmberPersonalCash.copy(alpha = 0.2f),
+                        selectedLabelColor = AmberPersonalCash,
+                        containerColor = DarkCardSurface,
+                        labelColor = TextSecondary
+                    )
                 )
                 FilterChip(
                     selected = selectedFilterType == TransactionType.PERSONAL_EXPENSE,
                     onClick = { selectedFilterType = TransactionType.PERSONAL_EXPENSE },
-                    label = { Text("مصروف شخصي") }
+                    label = { Text("مصروف شخصي") },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = CrimsonExpense.copy(alpha = 0.2f),
+                        selectedLabelColor = CrimsonExpense,
+                        containerColor = DarkCardSurface,
+                        labelColor = TextSecondary
+                    )
                 )
             }
 
