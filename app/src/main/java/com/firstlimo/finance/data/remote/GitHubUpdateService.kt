@@ -24,9 +24,35 @@ class GitHubUpdateService(
     private val gson = Gson()
 
     /**
-     * التحقق من وجود إصدار جديد عبر GitHub Releases API
+     * التحقق من وجود إصدار جديد عبر update.json أو GitHub Releases API
      */
     suspend fun checkForUpdate(currentVersionName: String): GitHubRelease? = withContext(Dispatchers.IO) {
+        // 1. محاولة الفحص أولاً عبر update.json المباشر في الفرع الرئيسي
+        try {
+            val rawJsonUrl = "https://raw.githubusercontent.com/$owner/$repo/main/update.json"
+            val rawRequest = Request.Builder()
+                .url(rawJsonUrl)
+                .header("User-Agent", "FirstLimoFinanceApp")
+                .build()
+
+            val rawResponse = client.newCall(rawRequest).execute()
+            if (rawResponse.isSuccessful) {
+                val jsonBody = rawResponse.body?.string()
+                if (!jsonBody.isNullOrBlank()) {
+                    val releaseFromJson = gson.fromJson(jsonBody, GitHubRelease::class.java)
+                    if (releaseFromJson != null) {
+                        val remoteVersion = releaseFromJson.getCleanVersion()
+                        if (isNewerVersion(remoteVersion, currentVersionName) && releaseFromJson.getApkDownloadUrl() != null) {
+                            return@withContext releaseFromJson
+                        }
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
+        // 2. إذا لم يتوفر عبر update.json، نفحص عبر GitHub Releases API الرسمي
         try {
             val url = "https://api.github.com/repos/$owner/$repo/releases/latest"
             val request = Request.Builder()
