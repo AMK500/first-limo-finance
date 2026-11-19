@@ -30,9 +30,9 @@ class FinancialViewModel(application: Application) : AndroidViewModel(applicatio
     val currentAppVersion: String
         get() = try {
             val pInfo = getApplication<Application>().packageManager.getPackageInfo(getApplication<Application>().packageName, 0)
-            pInfo.versionName ?: "1.3.0"
+            pInfo.versionName ?: "1.4.0"
         } catch (e: Exception) {
-            "1.3.0"
+            "1.4.0"
         }
 
     // هوية المستخدم الحالي
