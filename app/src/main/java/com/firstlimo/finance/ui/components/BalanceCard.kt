@@ -52,8 +52,19 @@ fun BalanceCard(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(if (isLarge) 20.dp else 16.dp)
+                .padding(if (isLarge) 18.dp else 14.dp)
         ) {
+            // النص التوضيحي لمعادلة الحساب في أعلى الكارت
+            if (subtitle != null) {
+                Text(
+                    text = subtitle,
+                    fontSize = 11.5.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = TextSecondary.copy(alpha = 0.85f),
+                    modifier = Modifier.padding(bottom = 6.dp)
+                )
+            }
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -62,7 +73,7 @@ fun BalanceCard(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
                         modifier = Modifier
-                            .size(if (isLarge) 44.dp else 36.dp)
+                            .size(if (isLarge) 42.dp else 36.dp)
                             .background(cardColor.copy(alpha = 0.15f), RoundedCornerShape(12.dp)),
                         contentAlignment = Alignment.Center
                     ) {
@@ -70,29 +81,20 @@ fun BalanceCard(
                             imageVector = icon,
                             contentDescription = null,
                             tint = cardColor,
-                            modifier = Modifier.size(if (isLarge) 26.dp else 22.dp)
+                            modifier = Modifier.size(if (isLarge) 24.dp else 20.dp)
                         )
                     }
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(10.dp))
                     Text(
                         text = title,
-                        fontSize = if (isLarge) 17.sp else 14.sp,
+                        fontSize = if (isLarge) 17.sp else 15.sp,
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary
                     )
                 }
-
-                if (subtitle != null) {
-                    Text(
-                        text = subtitle,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Normal,
-                        color = TextSecondary
-                    )
-                }
             }
 
-            Spacer(modifier = Modifier.height(if (isLarge) 16.dp else 12.dp))
+            Spacer(modifier = Modifier.height(if (isLarge) 14.dp else 10.dp))
 
             Text(
                 text = formattedAmount,
