@@ -43,9 +43,10 @@ data class GitHubRelease(
             !versionName.isNullOrBlank() -> versionName
             tagName.isNotBlank() -> tagName
             name.isNotBlank() -> name
-            else -> "1.3.0"
+            else -> "1.6.0"
         }
-        return raw.removePrefix("v").removePrefix("V").trim()
+        val match = Regex("""\d+(\.\d+)+""").find(raw)?.value
+        return match ?: raw.replace(Regex("""[^\d.]"""), "").trim().ifEmpty { "1.6.0" }
     }
 
     // رقم الإصدار للعرض

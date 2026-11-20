@@ -7,13 +7,15 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Backspace
 import androidx.compose.material.icons.filled.AddPhotoAlternate
+import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,8 +24,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -33,6 +36,7 @@ import com.firstlimo.finance.ui.theme.*
 import com.firstlimo.finance.utils.DateUtils
 import com.firstlimo.finance.utils.ReceiptImageHelper
 import java.io.File
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,15 +47,24 @@ fun AddTransactionSheet(
     onSave: (type: TransactionType, amount: Double, notes: String, date: String, time: String, receiptPath: String?) -> Unit
 ) {
     val context = LocalContext.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val scrollState = rememberScrollState()
+
     var selectedType by remember { mutableStateOf(editingTransaction?.type ?: initialType) }
-    var amountText by remember { mutableStateOf(editingTransaction?.amount?.toString() ?: "") }
+    
+    // حالة الآلة الحاسبة والمبلغ
+    val initialAmountStr = editingTransaction?.let { formatCalcResult(it.amount) } ?: ""
+    var amountText by remember { mutableStateOf(initialAmountStr) }
+    var calcExpression by remember { mutableStateOf(initialAmountStr) }
+    var justCalculated by remember { mutableStateOf(false) }
+
     var notesText by remember { mutableStateOf(editingTransaction?.notes ?: "") }
     var dateText by remember { mutableStateOf(editingTransaction?.dateString ?: DateUtils.getCurrentDate()) }
     var timeText by remember { mutableStateOf(editingTransaction?.timeString ?: DateUtils.getCurrentTime()) }
     var receiptImagePath by remember { mutableStateOf(editingTransaction?.receiptImagePath) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    // لاقط الصور من المعرض
+    // لاقط الصور من المعرض للفواتير
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
@@ -60,6 +73,87 @@ fun AddTransactionSheet(
             if (savedPath != null) {
                 receiptImagePath = savedPath
             }
+        }
+    }
+
+    // منطق الآلة الحاسبة
+    fun onDigitClick(digit: String) {
+        errorMessage = null
+        if (justCalculated) {
+            calcExpression = digit
+            amountText = digit
+            justCalculated = false
+        } else {
+            if (calcExpression == "0" && digit != ".") {
+                calcExpression = digit
+            } else {
+                calcExpression += digit
+            }
+            // إذا لم تحتوِ المعادلة على عمليات حسابية (+, -, ×, ÷)، يكون الناتج هو الرقم نفسه مباشرة
+            if (!calcExpression.contains(Regex("[+\\-×÷]"))) {
+                amountText = calcExpression
+            }
+        }
+    }
+
+    fun onOperatorClick(op: String) {
+        errorMessage = null
+        justCalculated = false
+        if (calcExpression.isBlank()) {
+            if (amountText.isNotBlank()) {
+                calcExpression = "$amountText $op "
+            } else {
+                calcExpression = "0 $op "
+            }
+            return
+        }
+        val trimmed = calcExpression.trimEnd()
+        if (trimmed.endsWith("+") || trimmed.endsWith("-") || trimmed.endsWith("×") || trimmed.endsWith("÷")) {
+            calcExpression = trimmed.dropLast(1).trimEnd() + " $op "
+        } else {
+            calcExpression = "$calcExpression $op "
+        }
+    }
+
+    fun onClearClick() {
+        calcExpression = ""
+        amountText = ""
+        justCalculated = false
+        errorMessage = null
+    }
+
+    fun onBackspaceClick() {
+        errorMessage = null
+        justCalculated = false
+        if (calcExpression.isNotEmpty()) {
+            calcExpression = if (calcExpression.endsWith(" ")) {
+                calcExpression.dropLast(3).trimEnd()
+            } else {
+                calcExpression.dropLast(1)
+            }
+            if (!calcExpression.contains(Regex("[+\\-×÷]"))) {
+                amountText = calcExpression
+            }
+        }
+    }
+
+    fun onEqualsClick() {
+        if (calcExpression.isBlank()) return
+        val evaluated = evaluateMathExpression(calcExpression)
+        if (evaluated != null && evaluated > 0) {
+            val formatted = formatCalcResult(evaluated)
+            amountText = formatted
+            calcExpression = formatted
+            justCalculated = true
+            errorMessage = null
+        } else if (evaluated != null && evaluated <= 0) {
+            val formatted = formatCalcResult(evaluated)
+            amountText = formatted
+            calcExpression = formatted
+            justCalculated = true
+            errorMessage = "الناتج يجب أن يكون أكبر من صفر"
+        } else {
+            errorMessage = "عملية حسابية غير مكتملة أو غير صالحة"
         }
     }
 
@@ -72,6 +166,8 @@ fun AddTransactionSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .imePadding()
+                .verticalScroll(scrollState)
                 .padding(horizontal = 20.dp, vertical = 12.dp)
         ) {
             // ترويسة النافذة
@@ -91,12 +187,12 @@ fun AddTransactionSheet(
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             // اختيار نوع العملية
             Text(
                 text = "نوع العملية:",
-                fontSize = 14.sp,
+                fontSize = 13.sp,
                 fontWeight = FontWeight.Medium,
                 color = TextSecondary
             )
@@ -149,21 +245,223 @@ fun AddTransactionSheet(
                 ) { selectedType = TransactionType.PERSONAL_EXPENSE }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
-            // إدخال المبلغ
+            // ==========================================
+            // شاشة عرض الآلة الحاسبة والمبلغ
+            // ==========================================
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = DarkCardSurface,
+                border = BorderStroke(1.5.dp, if (errorMessage != null) CrimsonExpense else AccentBlue.copy(alpha = 0.5f)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.Calculate,
+                                contentDescription = null,
+                                tint = AccentGold,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "الآلة الحاسبة للمبلغ",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = AccentGold
+                            )
+                        }
+
+                        // نص المعادلة أو الحسبة الجارية
+                        if (calcExpression.isNotBlank() && calcExpression.contains(Regex("[+\\-×÷]"))) {
+                            Text(
+                                text = calcExpression,
+                                fontSize = 13.sp,
+                                color = TextSecondary,
+                                maxLines = 1
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    // القيمة الإجمالية المعتمدة للمبلغ
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.Bottom
+                    ) {
+                        Text(
+                            text = if (amountText.isNotBlank()) amountText else (if (calcExpression.isNotBlank()) calcExpression else "0"),
+                            fontSize = 28.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = TextPrimary
+                        )
+                        Text(
+                            text = "ج.م",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = AccentGold,
+                            modifier = Modifier.padding(bottom = 4.dp)
+                        )
+                    }
+                }
+            }
+
+            if (errorMessage != null) {
+                Text(
+                    text = errorMessage!!,
+                    color = CrimsonExpense,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(top = 4.dp, start = 4.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // ==========================================
+            // لوحة مفاتيح الآلة الحاسبة المدمجة (Calculator Keypad)
+            // ==========================================
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = DarkCardSurface.copy(alpha = 0.7f),
+                border = BorderStroke(1.dp, DarkCardBorder),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    // الصف الأول: C, ⌫, ÷, ×
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        CalcButton(
+                            text = "C",
+                            color = CrimsonExpense,
+                            textColor = CrimsonExpense,
+                            containerColor = CrimsonExpense.copy(alpha = 0.15f),
+                            modifier = Modifier.weight(1f),
+                            onClick = { onClearClick() }
+                        )
+                        CalcIconButton(
+                            icon = Icons.AutoMirrored.Filled.Backspace,
+                            tint = TextSecondary,
+                            containerColor = DarkSurface,
+                            modifier = Modifier.weight(1f),
+                            onClick = { onBackspaceClick() }
+                        )
+                        CalcButton(
+                            text = "÷",
+                            color = AccentGold,
+                            textColor = AccentGold,
+                            containerColor = DarkSurface,
+                            modifier = Modifier.weight(1f),
+                            onClick = { onOperatorClick("÷") }
+                        )
+                        CalcButton(
+                            text = "×",
+                            color = AccentGold,
+                            textColor = AccentGold,
+                            containerColor = DarkSurface,
+                            modifier = Modifier.weight(1f),
+                            onClick = { onOperatorClick("×") }
+                        )
+                    }
+
+                    // الصف الثاني: 7, 8, 9, -
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        CalcButton(text = "7", modifier = Modifier.weight(1f), onClick = { onDigitClick("7") })
+                        CalcButton(text = "8", modifier = Modifier.weight(1f), onClick = { onDigitClick("8") })
+                        CalcButton(text = "9", modifier = Modifier.weight(1f), onClick = { onDigitClick("9") })
+                        CalcButton(
+                            text = "-",
+                            color = AccentGold,
+                            textColor = AccentGold,
+                            containerColor = DarkSurface,
+                            modifier = Modifier.weight(1f),
+                            onClick = { onOperatorClick("-") }
+                        )
+                    }
+
+                    // الصف الثالث: 4, 5, 6, +
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        CalcButton(text = "4", modifier = Modifier.weight(1f), onClick = { onDigitClick("4") })
+                        CalcButton(text = "5", modifier = Modifier.weight(1f), onClick = { onDigitClick("5") })
+                        CalcButton(text = "6", modifier = Modifier.weight(1f), onClick = { onDigitClick("6") })
+                        CalcButton(
+                            text = "+",
+                            color = AccentGold,
+                            textColor = AccentGold,
+                            containerColor = DarkSurface,
+                            modifier = Modifier.weight(1f),
+                            onClick = { onOperatorClick("+") }
+                        )
+                    }
+
+                    // الصف الرابع والخامس: 1, 2, 3, ., 0, 00, =
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        CalcButton(text = "1", modifier = Modifier.weight(1f), onClick = { onDigitClick("1") })
+                        CalcButton(text = "2", modifier = Modifier.weight(1f), onClick = { onDigitClick("2") })
+                        CalcButton(text = "3", modifier = Modifier.weight(1f), onClick = { onDigitClick("3") })
+                        CalcButton(text = ".", modifier = Modifier.weight(1f), onClick = { onDigitClick(".") })
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        CalcButton(text = "0", modifier = Modifier.weight(1f), onClick = { onDigitClick("0") })
+                        CalcButton(text = "00", modifier = Modifier.weight(1f), onClick = { onDigitClick("00") })
+                        // زر اليساوي الفخم (اعتماد الناتج كمبلغ)
+                        CalcButton(
+                            text = "= (احسب)",
+                            color = AccentGold,
+                            textColor = DarkBackground,
+                            containerColor = AccentGold,
+                            modifier = Modifier.weight(2f),
+                            isBold = true,
+                            onClick = { onEqualsClick() }
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // ==========================================
+            // خانة التفاصيل أو الملاحظات (تظهر كيبورد الجهاز العادية)
+            // ==========================================
             OutlinedTextField(
-                value = amountText,
-                onValueChange = {
-                    amountText = it
-                    errorMessage = null
-                },
-                label = { Text("المبلغ (ج.م)", color = TextSecondary) },
-                placeholder = { Text("0.00", color = TextTertiary) },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                singleLine = true,
+                value = notesText,
+                onValueChange = { notesText = it },
+                label = { Text("التفاصيل أو الملاحظات (اختياري)", color = TextSecondary) },
+                placeholder = { Text("مثال: بنزين، كارتة، غسيل، رقم الرحلة...", color = TextTertiary) },
                 modifier = Modifier.fillMaxWidth(),
-                isError = errorMessage != null,
+                maxLines = 3,
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = AccentBlue,
                     unfocusedBorderColor = DarkCardBorder,
@@ -173,15 +471,6 @@ fun AddTransactionSheet(
                     unfocusedContainerColor = DarkCardSurface
                 )
             )
-
-            if (errorMessage != null) {
-                Text(
-                    text = errorMessage!!,
-                    color = CrimsonExpense,
-                    fontSize = 12.sp,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
-            }
 
             Spacer(modifier = Modifier.height(12.dp))
 
@@ -224,26 +513,6 @@ fun AddTransactionSheet(
             }
 
             Spacer(modifier = Modifier.height(12.dp))
-
-            // الملاحظات والتفاصيل
-            OutlinedTextField(
-                value = notesText,
-                onValueChange = { notesText = it },
-                label = { Text("التفاصيل أو الملاحظات (اختياري)", color = TextSecondary) },
-                placeholder = { Text("مثال: بنزين، غسيل، رقم الرحلة...", color = TextTertiary) },
-                modifier = Modifier.fillMaxWidth(),
-                maxLines = 3,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = AccentBlue,
-                    unfocusedBorderColor = DarkCardBorder,
-                    focusedTextColor = TextPrimary,
-                    unfocusedTextColor = TextPrimary,
-                    focusedContainerColor = DarkCardSurface,
-                    unfocusedContainerColor = DarkCardSurface
-                )
-            )
-
-            Spacer(modifier = Modifier.height(14.dp))
 
             // قسم إرفاق الفاتورة / الإيصال
             if (receiptImagePath != null && File(receiptImagePath!!).exists()) {
@@ -303,14 +572,23 @@ fun AddTransactionSheet(
                 }
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(18.dp))
 
             // زر الحفظ الفخم
             Button(
                 onClick = {
-                    val amount = amountText.toDoubleOrNull()
+                    keyboardController?.hide()
+                    // تقييم المبلغ إما من amountText مباشرة أو بحساب calcExpression
+                    var amount = amountText.toDoubleOrNull()
                     if (amount == null || amount <= 0) {
-                        errorMessage = "يرجى إدخال مبلغ صحيح أكبر من صفر"
+                        val evaluated = evaluateMathExpression(calcExpression)
+                        if (evaluated != null && evaluated > 0) {
+                            amount = evaluated
+                        }
+                    }
+
+                    if (amount == null || amount <= 0) {
+                        errorMessage = "يرجى إدخال مبلغ صحيح أكبر من صفر أو الضغط على ="
                         return@Button
                     }
                     onSave(selectedType, amount, notesText.trim(), dateText.trim(), timeText.trim(), receiptImagePath)
@@ -330,6 +608,71 @@ fun AddTransactionSheet(
             }
 
             Spacer(modifier = Modifier.height(16.dp))
+        }
+    }
+}
+
+// زر الأرقام والعمليات في الآلة الحاسبة
+@Composable
+private fun CalcButton(
+    text: String,
+    modifier: Modifier = Modifier,
+    color: Color = DarkCardBorder,
+    textColor: Color = TextPrimary,
+    containerColor: Color = DarkSurface,
+    isBold: Boolean = false,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier = modifier
+            .height(44.dp)
+            .clickable { onClick() },
+        shape = RoundedCornerShape(10.dp),
+        color = containerColor,
+        border = BorderStroke(1.dp, color.copy(alpha = 0.5f))
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = text,
+                fontSize = if (text.length > 2) 13.sp else 16.sp,
+                fontWeight = if (isBold || text.length <= 2) FontWeight.Bold else FontWeight.Medium,
+                color = textColor,
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+// زر الأيقونة (مثل الحذف ⌫) في الآلة الحاسبة
+@Composable
+private fun CalcIconButton(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    modifier: Modifier = Modifier,
+    tint: Color = TextSecondary,
+    containerColor: Color = DarkSurface,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier = modifier
+            .height(44.dp)
+            .clickable { onClick() },
+        shape = RoundedCornerShape(10.dp),
+        color = containerColor,
+        border = BorderStroke(1.dp, DarkCardBorder.copy(alpha = 0.5f))
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = tint,
+                modifier = Modifier.size(18.dp)
+            )
         }
     }
 }
@@ -360,5 +703,74 @@ fun TypeChip(
                 color = if (isSelected) color else TextSecondary
             )
         }
+    }
+}
+
+// دالة لتقييم التعبيرات الرياضية (+, -, ×, ÷)
+fun evaluateMathExpression(expr: String): Double? {
+    return try {
+        val sanitized = expr.replace("×", "*").replace("÷", "/").replace(" ", "").trim()
+        if (sanitized.isEmpty()) return null
+
+        var pos = 0
+        fun peek(): Char = if (pos < sanitized.length) sanitized[pos] else '\u0000'
+        fun get(): Char = if (pos < sanitized.length) sanitized[pos++] else '\u0000'
+
+        fun parseFactor(): Double {
+            if (peek() == '+') { get(); return parseFactor() }
+            if (peek() == '-') { get(); return -parseFactor() }
+            if (peek() == '(') {
+                get()
+                val v = parseFactor()
+                if (peek() == ')') get()
+                return v
+            }
+            val start = pos
+            while (peek().isDigit() || peek() == '.') {
+                get()
+            }
+            if (start == pos) return 0.0
+            return sanitized.substring(start, pos).toDoubleOrNull() ?: 0.0
+        }
+
+        fun parseTerm(): Double {
+            var v = parseFactor()
+            while (true) {
+                when (peek()) {
+                    '*' -> { get(); v *= parseFactor() }
+                    '/' -> {
+                        get()
+                        val denom = parseFactor()
+                        v = if (denom != 0.0) v / denom else 0.0
+                    }
+                    else -> return v
+                }
+            }
+        }
+
+        fun parseExpr(): Double {
+            var v = parseTerm()
+            while (true) {
+                when (peek()) {
+                    '+' -> { get(); v += parseTerm() }
+                    '-' -> { get(); v -= parseTerm() }
+                    else -> return v
+                }
+            }
+        }
+
+        val result = parseExpr()
+        if (result.isInfinite() || result.isNaN()) null else result
+    } catch (e: Exception) {
+        null
+    }
+}
+
+// تنسيق ناتج الآلة الحاسبة دون أصفار عشرية زائدة
+fun formatCalcResult(value: Double): String {
+    return if (value % 1.0 == 0.0) {
+        value.toLong().toString()
+    } else {
+        String.format(Locale.US, "%.2f", value).trimEnd('0').trimEnd('.')
     }
 }
