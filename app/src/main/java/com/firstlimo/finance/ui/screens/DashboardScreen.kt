@@ -28,6 +28,7 @@ import com.firstlimo.finance.ui.viewmodel.FinancialViewModel
 fun DashboardScreen(
     viewModel: FinancialViewModel,
     onNavigateToHistory: () -> Unit,
+    onNavigateToAnalytics: () -> Unit,
     onNavigateToSettings: () -> Unit
 ) {
     val summary by viewModel.financialSummary.collectAsState()
@@ -76,6 +77,13 @@ fun DashboardScreen(
                             imageVector = Icons.Default.ReceiptLong,
                             contentDescription = "سجل العمليات",
                             tint = TextPrimary
+                        )
+                    }
+                    IconButton(onClick = onNavigateToAnalytics) {
+                        Icon(
+                            imageVector = Icons.Default.Analytics,
+                            contentDescription = "الرسوم البيانية",
+                            tint = AccentGold
                         )
                     }
                     IconButton(onClick = onNavigateToSettings) {
@@ -300,7 +308,7 @@ fun DashboardScreen(
                 showAddSheet = false
                 editingTransaction = null
             },
-            onSave = { type, amount, notes, date, time ->
+            onSave = { type, amount, notes, date, time, receiptPath ->
                 if (editingTransaction != null) {
                     viewModel.updateTransaction(
                         editingTransaction!!.copy(
@@ -308,11 +316,12 @@ fun DashboardScreen(
                             amount = amount,
                             notes = notes,
                             dateString = date,
-                            timeString = time
+                            timeString = time,
+                            receiptImagePath = receiptPath
                         )
                     )
                 } else {
-                    viewModel.addTransaction(type, amount, notes, date, time)
+                    viewModel.addTransaction(type, amount, notes, date, time, receiptPath)
                 }
                 showAddSheet = false
                 editingTransaction = null

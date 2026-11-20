@@ -1,25 +1,38 @@
 package com.firstlimo.finance.ui.components
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.firstlimo.finance.data.model.FinancialTransaction
 import com.firstlimo.finance.data.model.TransactionType
 import com.firstlimo.finance.ui.theme.*
 import com.firstlimo.finance.utils.DateUtils
+import com.firstlimo.finance.utils.ReceiptImageHelper
+import java.io.File
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -27,14 +40,28 @@ fun AddTransactionSheet(
     initialType: TransactionType = TransactionType.COLLECTION,
     editingTransaction: FinancialTransaction? = null,
     onDismiss: () -> Unit,
-    onSave: (type: TransactionType, amount: Double, notes: String, date: String, time: String) -> Unit
+    onSave: (type: TransactionType, amount: Double, notes: String, date: String, time: String, receiptPath: String?) -> Unit
 ) {
+    val context = LocalContext.current
     var selectedType by remember { mutableStateOf(editingTransaction?.type ?: initialType) }
     var amountText by remember { mutableStateOf(editingTransaction?.amount?.toString() ?: "") }
     var notesText by remember { mutableStateOf(editingTransaction?.notes ?: "") }
     var dateText by remember { mutableStateOf(editingTransaction?.dateString ?: DateUtils.getCurrentDate()) }
     var timeText by remember { mutableStateOf(editingTransaction?.timeString ?: DateUtils.getCurrentTime()) }
+    var receiptImagePath by remember { mutableStateOf(editingTransaction?.receiptImagePath) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    // لاقط الصور من المعرض
+    val imagePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            val savedPath = ReceiptImageHelper.saveReceiptImage(context, uri)
+            if (savedPath != null) {
+                receiptImagePath = savedPath
+            }
+        }
+    }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -216,6 +243,66 @@ fun AddTransactionSheet(
                 )
             )
 
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // قسم إرفاق الفاتورة / الإيصال
+            if (receiptImagePath != null && File(receiptImagePath!!).exists()) {
+                Surface(
+                    shape = RoundedCornerShape(14.dp),
+                    color = DarkCardSurface,
+                    border = BorderStroke(1.dp, DarkCardBorder),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            AsyncImage(
+                                model = File(receiptImagePath!!),
+                                contentDescription = "معاينة الفاتورة",
+                                modifier = Modifier
+                                    .size(46.dp)
+                                    .clip(RoundedCornerShape(8.dp)),
+                                contentScale = ContentScale.Crop
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(
+                                text = "تم إرفاق صورة الإيصال بنجاح",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = EmeraldCollection
+                            )
+                        }
+
+                        IconButton(onClick = { receiptImagePath = null }) {
+                            Icon(Icons.Default.Delete, contentDescription = "حذف الصورة", tint = CrimsonExpense)
+                        }
+                    }
+                }
+            } else {
+                OutlinedButton(
+                    onClick = { imagePickerLauncher.launch("image/*") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, DarkCardBorder)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.AddPhotoAlternate,
+                        contentDescription = null,
+                        tint = AccentBlue,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "تصوير أو إرفاق صورة الفاتورة / الإيصال",
+                        fontSize = 13.sp,
+                        color = TextSecondary
+                    )
+                }
+            }
+
             Spacer(modifier = Modifier.height(20.dp))
 
             // زر الحفظ الفخم
@@ -226,7 +313,7 @@ fun AddTransactionSheet(
                         errorMessage = "يرجى إدخال مبلغ صحيح أكبر من صفر"
                         return@Button
                     }
-                    onSave(selectedType, amount, notesText.trim(), dateText.trim(), timeText.trim())
+                    onSave(selectedType, amount, notesText.trim(), dateText.trim(), timeText.trim(), receiptImagePath)
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -260,7 +347,7 @@ fun TypeChip(
             .clickable { onClick() },
         shape = RoundedCornerShape(12.dp),
         color = if (isSelected) color.copy(alpha = 0.2f) else DarkCardSurface,
-        border = if (isSelected) androidx.compose.foundation.BorderStroke(1.5.dp, color) else androidx.compose.foundation.BorderStroke(1.dp, DarkCardBorder)
+        border = if (isSelected) BorderStroke(1.5.dp, color) else BorderStroke(1.dp, DarkCardBorder)
     ) {
         Box(
             modifier = Modifier.padding(vertical = 10.dp, horizontal = 12.dp),

@@ -126,7 +126,8 @@ class FinancialViewModel(application: Application) : AndroidViewModel(applicatio
         amount: Double,
         notes: String,
         date: String,
-        time: String
+        time: String,
+        receiptImagePath: String? = null
     ) {
         val userId = _currentUserId.value
         if (userId.isEmpty()) return
@@ -137,7 +138,8 @@ class FinancialViewModel(application: Application) : AndroidViewModel(applicatio
             amount = amount,
             notes = notes,
             dateString = date,
-            timeString = time
+            timeString = time,
+            receiptImagePath = receiptImagePath
         )
 
         viewModelScope.launch {

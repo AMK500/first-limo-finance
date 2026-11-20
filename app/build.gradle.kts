@@ -14,8 +14,8 @@ android {
         applicationId = "com.firstlimo.finance"
         minSdk = 24
         targetSdk = 35
-        versionCode = 5
-        versionName = "1.4.0"
+        versionCode = 6
+        versionName = "1.5.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -81,6 +81,10 @@ dependencies {
     // Networking & Serialization (For GitHub in-app updates)
     implementation(libs.okhttp)
     implementation(libs.gson)
+
+    // Biometric & Image loading
+    implementation(libs.androidx.biometric)
+    implementation(libs.coil.compose)
 
     debugImplementation(libs.androidx.ui.tooling)
 }

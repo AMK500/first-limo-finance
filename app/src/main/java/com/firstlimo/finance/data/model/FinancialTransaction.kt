@@ -3,7 +3,7 @@ package com.firstlimo.finance.data.model
 import java.util.UUID
 
 /**
- * تمثيل العملية المالية المنفصلة
+ * تمثيل العملية المالية المنفصلة مع دعم إرفاق صورة الإيصال أو الفاتورة
  */
 data class FinancialTransaction(
     val id: String = UUID.randomUUID().toString(),
@@ -14,13 +14,14 @@ data class FinancialTransaction(
     val dateString: String = "",
     val timeString: String = "",
     val notes: String = "",
+    val receiptImagePath: String? = null, // مسار صورة الإيصال / الفاتورة
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis(),
     val isDeleted: Boolean = false,
     val isSynced: Boolean = false
 ) {
     // التحويل إلى Map لـ Firestore
-    fun toMap(): Map<String, Any> {
+    fun toMap(): Map<String, Any?> {
         return mapOf(
             "id" to id,
             "userId" to userId,
@@ -30,6 +31,7 @@ data class FinancialTransaction(
             "dateString" to dateString,
             "timeString" to timeString,
             "notes" to notes,
+            "receiptImagePath" to receiptImagePath,
             "createdAt" to createdAt,
             "updatedAt" to updatedAt,
             "isDeleted" to isDeleted
@@ -47,6 +49,7 @@ data class FinancialTransaction(
                 dateString = map["dateString"] as? String ?: "",
                 timeString = map["timeString"] as? String ?: "",
                 notes = map["notes"] as? String ?: "",
+                receiptImagePath = map["receiptImagePath"] as? String,
                 createdAt = (map["createdAt"] as? Number)?.toLong() ?: System.currentTimeMillis(),
                 updatedAt = (map["updatedAt"] as? Number)?.toLong() ?: System.currentTimeMillis(),
                 isDeleted = map["isDeleted"] as? Boolean ?: false,

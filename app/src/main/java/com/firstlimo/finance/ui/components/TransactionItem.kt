@@ -2,12 +2,14 @@ package com.firstlimo.finance.ui.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -21,6 +23,7 @@ import androidx.compose.ui.unit.sp
 import com.firstlimo.finance.data.model.FinancialTransaction
 import com.firstlimo.finance.data.model.TransactionType
 import com.firstlimo.finance.ui.theme.*
+import java.io.File
 import java.text.DecimalFormat
 
 @Composable
@@ -32,6 +35,7 @@ fun TransactionItem(
 ) {
     var showMenu by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
+    var showReceiptViewer by remember { mutableStateOf(false) }
 
     val (badgeColor, signPrefix) = when (transaction.type) {
         TransactionType.COLLECTION -> Pair(EmeraldCollection, "+")
@@ -75,12 +79,43 @@ fun TransactionItem(
                 Spacer(modifier = Modifier.width(12.dp))
 
                 Column {
-                    Text(
-                        text = transaction.type.titleArabic,
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = TextPrimary
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = transaction.type.titleArabic,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary
+                        )
+
+                        // أيقونة الفاتورة المرفقة إن وجدت
+                        if (!transaction.receiptImagePath.isNullOrBlank() && File(transaction.receiptImagePath).exists()) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = AccentBlue.copy(alpha = 0.18f),
+                                modifier = Modifier.clickable { showReceiptViewer = true }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Image,
+                                        contentDescription = "عرض الفاتورة",
+                                        tint = AccentBlue,
+                                        modifier = Modifier.size(13.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(3.dp))
+                                    Text(
+                                        text = "فاتورة",
+                                        fontSize = 10.sp,
+                                        color = AccentBlue,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+                        }
+                    }
 
                     if (transaction.notes.isNotBlank()) {
                         Spacer(modifier = Modifier.height(2.dp))
@@ -123,6 +158,16 @@ fun TransactionItem(
                         onDismissRequest = { showMenu = false },
                         modifier = Modifier.background(DarkSurface)
                     ) {
+                        if (!transaction.receiptImagePath.isNullOrBlank() && File(transaction.receiptImagePath).exists()) {
+                            DropdownMenuItem(
+                                text = { Text("عرض الفاتورة المرفقة", color = AccentBlue) },
+                                leadingIcon = { Icon(Icons.Default.Image, contentDescription = null, tint = AccentBlue) },
+                                onClick = {
+                                    showMenu = false
+                                    showReceiptViewer = true
+                                }
+                            )
+                        }
                         DropdownMenuItem(
                             text = { Text("تعديل", color = TextPrimary) },
                             leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null, tint = AccentBlue) },
@@ -143,6 +188,14 @@ fun TransactionItem(
                 }
             }
         }
+    }
+
+    if (showReceiptViewer && !transaction.receiptImagePath.isNullOrBlank()) {
+        ReceiptViewerDialog(
+            imagePath = transaction.receiptImagePath,
+            title = "فاتورة: ${transaction.type.titleArabic} (${transaction.amount} ج.م)",
+            onDismiss = { showReceiptViewer = false }
+        )
     }
 
     if (showDeleteConfirm) {

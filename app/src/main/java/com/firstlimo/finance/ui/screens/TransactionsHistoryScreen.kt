@@ -243,14 +243,15 @@ fun TransactionsHistoryScreen(
             initialType = editingTransaction!!.type,
             editingTransaction = editingTransaction,
             onDismiss = { editingTransaction = null },
-            onSave = { type, amount, notes, date, time ->
+            onSave = { type, amount, notes, date, time, receiptPath ->
                 viewModel.updateTransaction(
                     editingTransaction!!.copy(
                         type = type,
                         amount = amount,
                         notes = notes,
                         dateString = date,
-                        timeString = time
+                        timeString = time,
+                        receiptImagePath = receiptPath
                     )
                 )
                 editingTransaction = null
