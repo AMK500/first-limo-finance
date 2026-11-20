@@ -5,20 +5,35 @@ import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentActivity
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 
 object BiometricHelper {
 
     private const val PREFS_NAME = "security_prefs"
     private const val KEY_BIOMETRIC_ENABLED = "biometric_enabled"
 
+    private val _isBiometricEnabledFlow = MutableStateFlow(false)
+    val isBiometricEnabledFlow: StateFlow<Boolean> = _isBiometricEnabledFlow
+
+    fun init(context: Context) {
+        val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        _isBiometricEnabledFlow.value = prefs.getBoolean(KEY_BIOMETRIC_ENABLED, false)
+    }
+
     fun isBiometricEnabled(context: Context): Boolean {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        return prefs.getBoolean(KEY_BIOMETRIC_ENABLED, false)
+        val enabled = prefs.getBoolean(KEY_BIOMETRIC_ENABLED, false)
+        if (_isBiometricEnabledFlow.value != enabled) {
+            _isBiometricEnabledFlow.value = enabled
+        }
+        return enabled
     }
 
     fun setBiometricEnabled(context: Context, enabled: Boolean) {
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         prefs.edit().putBoolean(KEY_BIOMETRIC_ENABLED, enabled).apply()
+        _isBiometricEnabledFlow.value = enabled
     }
 
     fun canAuthenticate(context: Context): Boolean {

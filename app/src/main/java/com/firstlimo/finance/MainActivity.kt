@@ -28,28 +28,33 @@ import com.firstlimo.finance.utils.BiometricHelper
 
 class MainActivity : FragmentActivity() {
 
+    companion object {
+        var isInternalActionActive = false
+    }
+
     private val financialViewModel: FinancialViewModel by viewModels()
     private val authViewModel: AuthViewModel by viewModels()
 
+    // حالة فتح التطبيق بالبصمة
+    private val isAppUnlocked = mutableStateOf(false)
+    private var isPromptShowing = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        BiometricHelper.init(this)
+
+        if (!BiometricHelper.isBiometricEnabled(this)) {
+            isAppUnlocked.value = true
+        }
 
         setContent {
             FirstLimoFinanceTheme {
-                val isBiometricEnabled = remember { BiometricHelper.isBiometricEnabled(this@MainActivity) }
-                var isAuthenticatedByBiometric by remember { mutableStateOf(!isBiometricEnabled) }
+                val isBiometricEnabled by BiometricHelper.isBiometricEnabledFlow.collectAsState()
+                val unlocked by isAppUnlocked
 
-                LaunchedEffect(Unit) {
-                    if (isBiometricEnabled && !isAuthenticatedByBiometric) {
-                        BiometricHelper.showBiometricPrompt(
-                            activity = this@MainActivity,
-                            onSuccess = { isAuthenticatedByBiometric = true },
-                            onError = { }
-                        )
-                    }
-                }
+                val needsLock = isBiometricEnabled && !unlocked
 
-                if (isBiometricEnabled && !isAuthenticatedByBiometric) {
+                if (needsLock) {
                     // شاشة القفل بالبصمة
                     Box(
                         modifier = Modifier
@@ -89,11 +94,7 @@ class MainActivity : FragmentActivity() {
                             Spacer(modifier = Modifier.height(8.dp))
                             Button(
                                 onClick = {
-                                    BiometricHelper.showBiometricPrompt(
-                                        activity = this@MainActivity,
-                                        onSuccess = { isAuthenticatedByBiometric = true },
-                                        onError = { }
-                                    )
+                                    promptBiometric()
                                 },
                                 shape = RoundedCornerShape(14.dp),
                                 colors = ButtonDefaults.buttonColors(containerColor = EmeraldCollection)
@@ -178,5 +179,39 @@ class MainActivity : FragmentActivity() {
                 }
             }
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        if (BiometricHelper.isBiometricEnabled(this)) {
+            if (!isAppUnlocked.value) {
+                promptBiometric()
+            }
+        } else {
+            isAppUnlocked.value = true
+        }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        // عند مغادرة التطبيق (الخروج للشاشة الرئيسية أو تطبيق آخر دون إغلاقه نهائياً)، يعود لطلب البصمة
+        if (!isInternalActionActive && BiometricHelper.isBiometricEnabled(this)) {
+            isAppUnlocked.value = false
+        }
+    }
+
+    private fun promptBiometric() {
+        if (isPromptShowing) return
+        isPromptShowing = true
+        BiometricHelper.showBiometricPrompt(
+            activity = this,
+            onSuccess = {
+                isAppUnlocked.value = true
+                isPromptShowing = false
+            },
+            onError = {
+                isPromptShowing = false
+            }
+        )
     }
 }

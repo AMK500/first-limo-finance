@@ -68,6 +68,7 @@ fun AddTransactionSheet(
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
+        com.firstlimo.finance.MainActivity.isInternalActionActive = false
         if (uri != null) {
             val savedPath = ReceiptImageHelper.saveReceiptImage(context, uri)
             if (savedPath != null) {
@@ -552,7 +553,10 @@ fun AddTransactionSheet(
                 }
             } else {
                 OutlinedButton(
-                    onClick = { imagePickerLauncher.launch("image/*") },
+                    onClick = {
+                        com.firstlimo.finance.MainActivity.isInternalActionActive = true
+                        imagePickerLauncher.launch("image/*")
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     border = BorderStroke(1.dp, DarkCardBorder)

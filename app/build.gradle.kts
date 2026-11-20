@@ -25,10 +25,10 @@ android {
 
     signingConfigs {
         create("release") {
-            storeFile = file("release-key.jks")
-            storePassword = "firstlimo2026"
-            keyAlias = "firstlimo"
-            keyPassword = "firstlimo2026"
+            storeFile = file("signing-key.jks")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
             enableV1Signing = true
             enableV2Signing = true
             enableV3Signing = true
