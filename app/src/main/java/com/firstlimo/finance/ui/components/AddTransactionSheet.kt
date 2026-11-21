@@ -6,6 +6,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -92,8 +93,11 @@ fun AddTransactionSheet(
             } else {
                 calcExpression += digit
             }
-            // إذا لم تحتوِ المعادلة على عمليات حسابية (+, -, ×, ÷)، يكون الناتج هو الرقم نفسه مباشرة
-            if (!calcExpression.contains(Regex("[+\\-×÷]"))) {
+            // حساب فوري ومباشر للمبلغ
+            val live = evaluateLiveExpression(calcExpression)
+            if (live != null && live > 0) {
+                amountText = formatCalcResult(live)
+            } else if (!calcExpression.contains(Regex("[+\\-×÷]"))) {
                 amountText = calcExpression
             }
         }
@@ -134,7 +138,10 @@ fun AddTransactionSheet(
             } else {
                 calcExpression.dropLast(1)
             }
-            if (!calcExpression.contains(Regex("[+\\-×÷]"))) {
+            val live = evaluateLiveExpression(calcExpression)
+            if (live != null && live > 0) {
+                amountText = formatCalcResult(live)
+            } else if (!calcExpression.contains(Regex("[+\\-×÷]"))) {
                 amountText = calcExpression
             }
         }
@@ -142,7 +149,7 @@ fun AddTransactionSheet(
 
     fun onEqualsClick() {
         if (calcExpression.isBlank()) return
-        val evaluated = evaluateMathExpression(calcExpression)
+        val evaluated = evaluateLiveExpression(calcExpression) ?: evaluateMathExpression(calcExpression)
         if (evaluated != null && evaluated > 0) {
             val formatted = formatCalcResult(evaluated)
             amountText = formatted
@@ -251,12 +258,12 @@ fun AddTransactionSheet(
             Spacer(modifier = Modifier.height(14.dp))
 
             // ==========================================
-            // شاشة عرض الآلة الحاسبة والمبلغ
+            // شاشة عرض الآلة الحاسبة والمبلغ مع سكرول مخفي وحساب فوري
             // ==========================================
             Surface(
                 shape = RoundedCornerShape(16.dp),
                 color = DarkCardSurface,
-                border = BorderStroke(1.5.dp, if (errorMessage != null) CrimsonExpense else AccentBlue.copy(alpha = 0.5f)),
+                border = BorderStroke(1.5.dp, if (errorMessage != null) CrimsonExpense else AccentGold.copy(alpha = 0.5f)),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(
@@ -264,6 +271,7 @@ fun AddTransactionSheet(
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 12.dp)
                 ) {
+                    // السطر العلوي: أيقونة وعنوان الآلة الحاسبة وشارة الحساب الفوري
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -285,38 +293,101 @@ fun AddTransactionSheet(
                             )
                         }
 
-                        // نص المعادلة أو الحسبة الجارية
-                        if (calcExpression.isNotBlank() && calcExpression.contains(Regex("[+\\-×÷]"))) {
-                            Text(
-                                text = calcExpression,
-                                fontSize = 13.sp,
-                                color = TextSecondary,
-                                maxLines = 1
-                            )
+                        // شارة الحساب الفوري التلقائي
+                        if (calcExpression.contains(Regex("[+\\-×÷]"))) {
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = AccentGold.copy(alpha = 0.15f)
+                            ) {
+                                Text(
+                                    text = "حساب فوري",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = AccentGold,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
 
-                    // القيمة الإجمالية المعتمدة للمبلغ
+                    // سطر العملية الحسابية كاملة مع تمرير أفقي مخفي بسلاسة
+                    val expressionScrollState = rememberScrollState()
+                    LaunchedEffect(calcExpression) {
+                        if (calcExpression.isNotEmpty()) {
+                            expressionScrollState.animateScrollTo(expressionScrollState.maxValue)
+                        }
+                    }
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(expressionScrollState),
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = if (calcExpression.isNotBlank()) calcExpression else "0",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = if (calcExpression.contains(Regex("[+\\-×÷]"))) TextSecondary else TextTertiary,
+                            maxLines = 1,
+                            softWrap = false
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+                    HorizontalDivider(color = DarkCardBorder.copy(alpha = 0.5f), thickness = 0.8.dp)
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    // سطر الناتج الفوري والعملة (ج.م)
+                    val amountScrollState = rememberScrollState()
+                    val displayLiveAmount = remember(calcExpression, amountText) {
+                        val live = evaluateLiveExpression(calcExpression)
+                        if (live != null && live > 0) {
+                            formatCalcResult(live)
+                        } else if (amountText.isNotBlank()) {
+                            amountText
+                        } else {
+                            "0"
+                        }
+                    }
+
+                    LaunchedEffect(displayLiveAmount) {
+                        amountScrollState.animateScrollTo(amountScrollState.maxValue)
+                    }
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.Bottom
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = if (amountText.isNotBlank()) amountText else (if (calcExpression.isNotBlank()) calcExpression else "0"),
-                            fontSize = 28.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = TextPrimary
-                        )
+                        // خانة ج.م
                         Text(
                             text = "ج.م",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.ExtraBold,
                             color = AccentGold,
-                            modifier = Modifier.padding(bottom = 4.dp)
+                            modifier = Modifier.padding(bottom = 2.dp)
                         )
+
+                        // الناتج الحسابي الفوري باللون الأصفر الذهبي الفخم مع تمرير أفقي مخفي للأرقام الكبيرة
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .horizontalScroll(amountScrollState),
+                            contentAlignment = Alignment.CenterEnd
+                        ) {
+                            Text(
+                                text = displayLiveAmount,
+                                fontSize = 28.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = AccentGold,
+                                maxLines = 1,
+                                softWrap = false
+                            )
+                        }
                     }
                 }
             }
@@ -794,4 +865,16 @@ fun formatCalcResult(value: Double): String {
     } else {
         String.format(Locale.US, "%.2f", value).trimEnd('0').trimEnd('.')
     }
+}
+
+// حساب فوري للتعبير الرياضي حتى لو كان في نهايته معامل قيد الإدخال (+, -, ×, ÷)
+fun evaluateLiveExpression(expr: String): Double? {
+    val trimmed = expr.trim()
+    if (trimmed.isEmpty()) return null
+    var clean = trimmed
+    while (clean.endsWith("+") || clean.endsWith("-") || clean.endsWith("×") || clean.endsWith("÷") || clean.endsWith(" ") || clean.endsWith(".")) {
+        clean = clean.dropLast(1).trim()
+    }
+    if (clean.isEmpty()) return null
+    return evaluateMathExpression(clean)
 }

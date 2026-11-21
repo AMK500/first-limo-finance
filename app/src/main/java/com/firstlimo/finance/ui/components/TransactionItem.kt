@@ -51,7 +51,8 @@ fun TransactionItem(
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
+            .padding(vertical = 4.dp)
+            .clickable { onEdit(transaction) },
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = DarkCardSurface),
         border = BorderStroke(1.dp, DarkCardBorder),
@@ -169,15 +170,7 @@ fun TransactionItem(
                             )
                         }
                         DropdownMenuItem(
-                            text = { Text("تعديل", color = TextPrimary) },
-                            leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null, tint = AccentBlue) },
-                            onClick = {
-                                showMenu = false
-                                onEdit(transaction)
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("حذف", color = CrimsonExpense) },
+                            text = { Text("حذف العملية", color = CrimsonExpense) },
                             leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null, tint = CrimsonExpense) },
                             onClick = {
                                 showMenu = false
