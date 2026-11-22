@@ -240,13 +240,13 @@ fun AuthScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.Center
                         ) {
-                            Text(
-                                text = "G",
-                                fontSize = 22.sp,
-                                fontWeight = FontWeight.Black,
-                                color = Color(0xFF4285F4)
+                            Icon(
+                                painter = androidx.compose.ui.res.painterResource(id = com.firstlimo.finance.R.drawable.ic_google_logo),
+                                contentDescription = "Google Logo",
+                                tint = Color.Unspecified,
+                                modifier = Modifier.size(24.dp)
                             )
-                            Spacer(modifier = Modifier.width(10.dp))
+                            Spacer(modifier = Modifier.width(12.dp))
                             Text(
                                 text = "تسجيل الدخول بحساب Google",
                                 fontSize = 15.sp,
