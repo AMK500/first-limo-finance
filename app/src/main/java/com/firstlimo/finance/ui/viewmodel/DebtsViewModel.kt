@@ -117,7 +117,19 @@ class DebtsViewModel(application: Application) : AndroidViewModel(application) {
 
     fun deleteCustomer(customerId: String) {
         viewModelScope.launch {
-            debtsRepository.deleteCustomer(customerId)
+            debtsRepository.deleteCustomer(customerId, _currentUserId.value)
+        }
+    }
+
+    fun deleteCustomer(customer: CustomerEntity) {
+        viewModelScope.launch {
+            debtsRepository.deleteCustomer(customer.id, customer.userId)
+        }
+    }
+
+    fun togglePinCustomer(customer: CustomerEntity) {
+        viewModelScope.launch {
+            debtsRepository.togglePinCustomer(customer)
         }
     }
 

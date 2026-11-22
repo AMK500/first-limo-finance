@@ -211,57 +211,6 @@ fun SettingsScreen(
 
                         HorizontalDivider(color = DarkCardBorder)
 
-                        // حفظ نسخة احتياطية على ذاكرة الهاتف
-                        SettingsRow(
-                            title = "حفظ نسخة احتياطية على الهاتف",
-                            subtitle = "حفظ دائم في مجلد المستندات يمنع فقدان البيانات نهائياً",
-                            icon = Icons.Default.Save,
-                            iconColor = EmeraldCollection
-                        ) {
-                            financialViewModel.createBackup()
-                        }
-
-                        HorizontalDivider(color = DarkCardBorder)
-
-                        // استرجاع النسخة الاحتياطية
-                        SettingsRow(
-                            title = "استرجاع النسخة الاحتياطية",
-                            subtitle = "استعادة كافة العمليات بعد إعادة تثبيت التطبيق",
-                            icon = Icons.Default.Restore,
-                            iconColor = AccentGold
-                        ) {
-                            financialViewModel.restoreFromBackup()
-                        }
-
-                        HorizontalDivider(color = DarkCardBorder)
-
-                        // تصدير إكسيل
-                        SettingsRow(
-                            title = "تصدير تقرير الحسابات (Excel / CSV)",
-                            subtitle = "مشاركة كشف الحساب عبر واتساب أو البريد",
-                            icon = Icons.Default.FileDownload,
-                            iconColor = PurpleCommission
-                        ) {
-                            val file = ExportUtils.exportToCsv(context, transactions, summary)
-                            if (file != null) {
-                                ExportUtils.shareFile(context, file)
-                            }
-                        }
-
-                        HorizontalDivider(color = DarkCardBorder)
-
-                        // مزامنة سحابية
-                        SettingsRow(
-                            title = "مزامنة البيانات الآن",
-                            subtitle = "تحديث فوري للبيانات ومطابقتها",
-                            icon = Icons.Default.Sync,
-                            iconColor = BlueLimoNet
-                        ) {
-                            financialViewModel.syncUnsynced()
-                        }
-
-                        HorizontalDivider(color = DarkCardBorder)
-
                         // تسجيل الخروج
                         SettingsRow(
                             title = "تسجيل الخروج",

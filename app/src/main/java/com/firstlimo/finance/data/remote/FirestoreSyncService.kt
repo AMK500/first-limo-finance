@@ -128,6 +128,7 @@ class FirestoreSyncService(
                             address = data["address"] as? String,
                             notes = data["notes"] as? String,
                             isSystem = (data["isSystem"] as? Boolean) ?: false,
+                            isPinned = (data["isPinned"] as? Boolean) ?: false,
                             createdAt = (data["createdAt"] as? Number)?.toLong() ?: System.currentTimeMillis(),
                             updatedAt = (data["updatedAt"] as? Number)?.toLong() ?: System.currentTimeMillis(),
                             isDeleted = (data["isDeleted"] as? Boolean) ?: false
@@ -162,6 +163,7 @@ class FirestoreSyncService(
                         address = data["address"] as? String,
                         notes = data["notes"] as? String,
                         isSystem = (data["isSystem"] as? Boolean) ?: false,
+                        isPinned = (data["isPinned"] as? Boolean) ?: false,
                         createdAt = (data["createdAt"] as? Number)?.toLong() ?: System.currentTimeMillis(),
                         updatedAt = (data["updatedAt"] as? Number)?.toLong() ?: System.currentTimeMillis(),
                         isDeleted = (data["isDeleted"] as? Boolean) ?: false
@@ -184,6 +186,7 @@ class FirestoreSyncService(
             "address" to customer.address,
             "notes" to customer.notes,
             "isSystem" to customer.isSystem,
+            "isPinned" to customer.isPinned,
             "createdAt" to customer.createdAt,
             "updatedAt" to customer.updatedAt,
             "isDeleted" to customer.isDeleted
@@ -210,6 +213,7 @@ class FirestoreSyncService(
                 "address" to c.address,
                 "notes" to c.notes,
                 "isSystem" to c.isSystem,
+                "isPinned" to c.isPinned,
                 "createdAt" to c.createdAt,
                 "updatedAt" to c.updatedAt,
                 "isDeleted" to c.isDeleted

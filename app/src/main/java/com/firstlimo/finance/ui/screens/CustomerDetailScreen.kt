@@ -43,11 +43,14 @@ fun CustomerDetailScreen(
 ) {
     val context = LocalContext.current
     val transactions by viewModel.selectedCustomerTransactions.collectAsState()
+    val allCustomersWithBalance by viewModel.customersWithBalance.collectAsState()
+    val currentCustomer = allCustomersWithBalance.firstOrNull { it.customer.id == customer.id }?.customer ?: customer
 
     var showAddSheet by remember { mutableStateOf(false) }
     var sheetType by remember { mutableStateOf(DebtType.TOOK) }
     var editingTransaction by remember { mutableStateOf<DebtTransactionEntity?>(null) }
     var transactionToDelete by remember { mutableStateOf<DebtTransactionEntity?>(null) }
+    var showDeleteCustomerDialog by remember { mutableStateOf(false) }
     var selectedPeriod by remember { mutableStateOf("الكل") }
 
     val todayStr = com.firstlimo.finance.utils.DateUtils.getCurrentDate()
@@ -110,6 +113,27 @@ fun CustomerDetailScreen(
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "رجوع", tint = TextPrimary)
+                    }
+                },
+                actions = {
+                    // زر التثبيت في الأعلى 📌
+                    IconButton(onClick = { viewModel.togglePinCustomer(currentCustomer) }) {
+                        Icon(
+                            imageVector = Icons.Default.PushPin,
+                            contentDescription = if (currentCustomer.isPinned) "إلغاء التثبيت" else "تثبيت العميل في الأعلى",
+                            tint = if (currentCustomer.isPinned) AccentGold else TextSecondary
+                        )
+                    }
+
+                    // زر حذف العميل (متاح فقط للعملاء العاديين)
+                    if (!customer.isSystem) {
+                        IconButton(onClick = { showDeleteCustomerDialog = true }) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "حذف العميل",
+                                tint = CrimsonExpense
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = DarkSurface)
@@ -495,6 +519,48 @@ fun CustomerDetailScreen(
                 showAddSheet = false
                 editingTransaction = null
             }
+        )
+    }
+
+    // نافذة تأكيد حذف العميل
+    if (showDeleteCustomerDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteCustomerDialog = false },
+            title = {
+                Text(
+                    text = "حذف العميل",
+                    color = CrimsonExpense,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 17.sp
+                )
+            },
+            text = {
+                Text(
+                    text = "هل أنت متأكد من رغبتك في حذف العميل \"${customer.name}\" وكافة المعاملات المالية المربوطة به نهائياً؟",
+                    color = TextPrimary,
+                    fontSize = 14.sp
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.deleteCustomer(customer)
+                        showDeleteCustomerDialog = false
+                        onBack()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = CrimsonExpense),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Text("نعم، حذف نهائي", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteCustomerDialog = false }) {
+                    Text("إلغاء", color = TextSecondary)
+                }
+            },
+            containerColor = DarkCardSurface,
+            shape = RoundedCornerShape(18.dp)
         )
     }
 }

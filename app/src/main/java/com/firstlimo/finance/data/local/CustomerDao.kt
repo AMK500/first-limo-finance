@@ -7,8 +7,11 @@ import kotlinx.coroutines.flow.Flow
 interface CustomerDao {
 
     // ================= العملاء =================
-    @Query("SELECT * FROM customers WHERE userId = :userId AND isDeleted = 0 ORDER BY isSystem DESC, updatedAt DESC")
+    @Query("SELECT * FROM customers WHERE userId = :userId AND isDeleted = 0 ORDER BY isSystem DESC, isPinned DESC, updatedAt DESC")
     fun getCustomers(userId: String): Flow<List<CustomerEntity>>
+
+    @Query("UPDATE customers SET isPinned = :isPinned, updatedAt = :updatedAt WHERE id = :customerId")
+    suspend fun updatePinnedStatus(customerId: String, isPinned: Boolean, updatedAt: Long = System.currentTimeMillis())
 
     @Query("SELECT * FROM customers WHERE userId = :userId AND isDeleted = 0")
     suspend fun getCustomersList(userId: String): List<CustomerEntity>
@@ -55,6 +58,9 @@ interface CustomerDao {
 
     @Query("UPDATE debt_transactions SET isDeleted = 1, updatedAt = :updatedAt WHERE id = :transactionId")
     suspend fun softDeleteDebtTransaction(transactionId: String, updatedAt: Long = System.currentTimeMillis())
+
+    @Query("UPDATE debt_transactions SET isDeleted = 1, updatedAt = :updatedAt WHERE customerId = :customerId")
+    suspend fun softDeleteDebtTransactionsForCustomer(customerId: String, updatedAt: Long = System.currentTimeMillis())
 
     @Query("UPDATE debt_transactions SET isDeleted = 1, updatedAt = :updatedAt WHERE linkedFinancialTransactionId = :linkedId")
     suspend fun softDeleteByLinkedId(linkedId: String, updatedAt: Long = System.currentTimeMillis())

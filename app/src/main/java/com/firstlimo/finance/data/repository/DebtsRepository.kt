@@ -108,13 +108,29 @@ class DebtsRepository(
     }
 
     /**
-     * حذف عميل
+     * تثبيت أو إلغاء تثبيت عميل في أعلى قائمة الديون
+     */
+    suspend fun togglePinCustomer(customer: CustomerEntity) {
+        val newPinned = !customer.isPinned
+        val updated = customer.copy(isPinned = newPinned, updatedAt = System.currentTimeMillis())
+        customerDao.updatePinnedStatus(customer.id, newPinned, updated.updatedAt)
+        try {
+            syncService.uploadCustomer(customer.userId, updated)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    /**
+     * حذف عميل وجميع معاملاته محلياً وسحابياً
      */
     suspend fun deleteCustomer(customerId: String, userId: String = "") {
-        customerDao.softDeleteCustomer(customerId)
+        val now = System.currentTimeMillis()
+        customerDao.softDeleteCustomer(customerId, now)
+        customerDao.softDeleteDebtTransactionsForCustomer(customerId, now)
         if (userId.isNotBlank()) {
             try {
-                syncService.uploadCustomer(userId, CustomerEntity(id = customerId, userId = userId, name = "", isDeleted = true))
+                syncService.uploadCustomer(userId, CustomerEntity(id = customerId, userId = userId, name = "", isDeleted = true, updatedAt = now))
             } catch (e: Exception) {
                 e.printStackTrace()
             }

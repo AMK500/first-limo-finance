@@ -37,6 +37,7 @@ fun DebtsScreen(
     val searchQuery by viewModel.searchQuery.collectAsState()
 
     var showAddDialog by remember { mutableStateOf(false) }
+    var customerToDelete by remember { mutableStateOf<CustomerEntity?>(null) }
     val formatter = DecimalFormat("#,##0.00")
 
     Scaffold(
@@ -199,7 +200,9 @@ fun DebtsScreen(
                 items(customers, key = { it.customer.id }) { item ->
                     CustomerCardItem(
                         item = item,
-                        onClick = { onCustomerClick(item.customer) }
+                        onClick = { onCustomerClick(item.customer) },
+                        onTogglePin = { viewModel.togglePinCustomer(item.customer) },
+                        onDelete = if (!item.customer.isSystem) { { customerToDelete = item.customer } } else null
                     )
                 }
             }
@@ -218,12 +221,42 @@ fun DebtsScreen(
             }
         )
     }
+
+    // نافذة تأكيد حذف العميل
+    if (customerToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { customerToDelete = null },
+            title = { Text("حذف العميل", color = CrimsonExpense, fontWeight = FontWeight.Bold, fontSize = 17.sp) },
+            text = { Text("هل أنت متأكد من حذف العميل \"${customerToDelete!!.name}\" وجميع معاملاته نهائياً؟", color = TextPrimary, fontSize = 14.sp) },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        viewModel.deleteCustomer(customerToDelete!!)
+                        customerToDelete = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = CrimsonExpense),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Text("نعم، حذف", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { customerToDelete = null }) {
+                    Text("إلغاء", color = TextSecondary)
+                }
+            },
+            containerColor = DarkCardSurface,
+            shape = RoundedCornerShape(18.dp)
+        )
+    }
 }
 
 @Composable
 fun CustomerCardItem(
     item: CustomerWithBalance,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onTogglePin: () -> Unit,
+    onDelete: (() -> Unit)? = null
 ) {
     val customer = item.customer
     val netBalance = item.netBalance
@@ -240,8 +273,8 @@ fun CustomerCardItem(
         shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = DarkCardSurface),
         border = BorderStroke(
-            if (customer.isSystem) 1.5.dp else 1.dp,
-            if (customer.isSystem) AccentGold.copy(alpha = 0.5f) else DarkCardBorder
+            if (customer.isPinned) 1.5.dp else if (customer.isSystem) 1.5.dp else 1.dp,
+            if (customer.isPinned) AccentGold.copy(alpha = 0.7f) else if (customer.isSystem) AccentGold.copy(alpha = 0.5f) else DarkCardBorder
         )
     ) {
         Row(
@@ -260,7 +293,7 @@ fun CustomerCardItem(
                     modifier = Modifier
                         .size(44.dp)
                         .background(
-                            if (customer.isSystem) AccentGold.copy(alpha = 0.2f) else AccentBlue.copy(alpha = 0.15f),
+                            if (customer.isPinned) AccentGold.copy(alpha = 0.25f) else if (customer.isSystem) AccentGold.copy(alpha = 0.2f) else AccentBlue.copy(alpha = 0.15f),
                             CircleShape
                         ),
                     contentAlignment = Alignment.Center
@@ -272,7 +305,7 @@ fun CustomerCardItem(
                             text = customer.name.firstOrNull()?.toString() ?: "ع",
                             fontSize = 18.sp,
                             fontWeight = FontWeight.Bold,
-                            color = AccentBlue
+                            color = if (customer.isPinned) AccentGold else AccentBlue
                         )
                     }
                 }
@@ -287,6 +320,32 @@ fun CustomerCardItem(
                             fontWeight = FontWeight.Bold,
                             color = TextPrimary
                         )
+                        if (customer.isPinned) {
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Surface(
+                                shape = RoundedCornerShape(6.dp),
+                                color = AccentGold.copy(alpha = 0.2f)
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.PushPin,
+                                        contentDescription = "مثبت",
+                                        tint = AccentGold,
+                                        modifier = Modifier.size(11.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(3.dp))
+                                    Text(
+                                        text = "مثبت",
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = AccentGold
+                                    )
+                                }
+                            }
+                        }
                         if (customer.isSystem) {
                             Spacer(modifier = Modifier.width(6.dp))
                             Surface(
@@ -324,19 +383,51 @@ fun CustomerCardItem(
                 }
             }
 
-            // رصيد العميل على اليسار
-            Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    text = "${formatter.format(Math.abs(netBalance))} ج.م",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = balanceColor
-                )
-                Text(
-                    text = if (isPositive) "أخذت (لك)" else if (isNegative) "أعطيت (عليك)" else "خالص",
-                    fontSize = 11.sp,
-                    color = balanceColor
-                )
+            // رصيد العميل وأزرار الإجراءات السريعة على اليسار
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = "${formatter.format(Math.abs(netBalance))} ج.م",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = balanceColor
+                    )
+                    Text(
+                        text = if (isPositive) "أخذت (لك)" else if (isNegative) "أعطيت (عليك)" else "خالص",
+                        fontSize = 11.sp,
+                        color = balanceColor
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(4.dp))
+
+                // زر التثبيت
+                IconButton(
+                    onClick = onTogglePin,
+                    modifier = Modifier.size(34.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.PushPin,
+                        contentDescription = if (customer.isPinned) "إلغاء التثبيت" else "تثبيت العميل في الأعلى",
+                        tint = if (customer.isPinned) AccentGold else TextTertiary.copy(alpha = 0.45f),
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+
+                // زر الحذف (إذا لم يكن حساب الشركة)
+                if (!customer.isSystem && onDelete != null) {
+                    IconButton(
+                        onClick = onDelete,
+                        modifier = Modifier.size(34.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "حذف العميل",
+                            tint = CrimsonExpense.copy(alpha = 0.75f),
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
             }
         }
     }

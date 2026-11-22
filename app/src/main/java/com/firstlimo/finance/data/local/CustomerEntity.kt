@@ -14,6 +14,7 @@ data class CustomerEntity(
     val address: String? = null, // اختياري
     val notes: String? = null, // اختياري
     val isSystem: Boolean = false, // true لعميل فرست ليموزين الأساسي
+    val isPinned: Boolean = false, // true لتثبيت العميل في أعلى قائمة الديون
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis(),
     val isDeleted: Boolean = false
