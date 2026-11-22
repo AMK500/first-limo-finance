@@ -12,7 +12,20 @@
           "package_name": "com.firstlimo.finance"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "596107741265-f971ft36teue0oi8gr4hofg7qmkkk81r.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.firstlimo.finance",
+            "certificate_hash": "46d69df94b58f0f24c7ba28b90e1f695a729e26b"
+          }
+        },
+        {
+          "client_id": "596107741265-l10mgrfmllvph1v75n70jbk4i82msnpo.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBFlqvMu3qATHsNzn3qchxIgen6xEhdH2Y"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "596107741265-l10mgrfmllvph1v75n70jbk4i82msnpo.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

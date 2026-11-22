@@ -201,14 +201,15 @@ fun AuthScreen(
 
                         try {
                             val defaultWebClientIdRes = context.resources.getIdentifier("default_web_client_id", "string", context.packageName)
-                            val webClientId = if (defaultWebClientIdRes != 0) context.getString(defaultWebClientIdRes) else null
+                            val webClientId = if (defaultWebClientIdRes != 0) {
+                                context.getString(defaultWebClientIdRes)
+                            } else {
+                                "596107741265-l10mgrfmllvph1v75n70jbk4i82msnpo.apps.googleusercontent.com"
+                            }
 
                             val gsoBuilder = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                                .requestIdToken(webClientId)
                                 .requestEmail()
-
-                            if (!webClientId.isNullOrBlank()) {
-                                gsoBuilder.requestIdToken(webClientId)
-                            }
 
                             val googleSignInClient = GoogleSignIn.getClient(context, gsoBuilder.build())
                             googleSignInLauncher.launch(googleSignInClient.signInIntent)
