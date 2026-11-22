@@ -245,4 +245,47 @@ class DebtsRepository(
                 }
         }
     }
+
+    /**
+     * ترحيل كافة العملاء والديون المسجلة محلياً أو بحساب ضيف/هاتف إلى حساب Google الجديد
+     */
+    suspend fun migrateLocalDataToUser(newUserId: String) {
+        if (newUserId.isBlank()) return
+        try {
+            customerDao.migrateCustomersToUser(newUserId)
+            customerDao.migrateSystemCustomerToUser(newUserId)
+            customerDao.migrateDebtTransactionsToUser(newUserId)
+            customerDao.updateLinkedSystemCustomerId(newUserId)
+            ensureSystemCustomerExists(newUserId)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    /**
+     * رفع كافة العملاء والديون المحلية إلى سحابة Google Cloud (Firestore) فوراً
+     */
+    suspend fun uploadAllLocalDataToCloud(userId: String) {
+        if (userId.isBlank()) return
+        try {
+            val customers = customerDao.getCustomersList(userId)
+            for (cust in customers) {
+                try {
+                    syncService.uploadCustomer(userId, cust)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+            val debts = customerDao.getAllDebtTransactionsList(userId)
+            for (debt in debts) {
+                try {
+                    syncService.uploadDebtTransaction(userId, debt)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
 }

@@ -70,10 +70,14 @@ class DebtsViewModel(application: Application) : AndroidViewModel(application) {
         _currentUserId.value = userId
         if (userId.isNotEmpty()) {
             viewModelScope.launch {
+                // 1. ترحيل أي عملاء وديون محلية مسجلة سابقاً إلى حساب Google الجديد
+                debtsRepository.migrateLocalDataToUser(userId)
                 debtsRepository.ensureSystemCustomerExists(userId)
-                // مزامنة فورية وجلب لكافة العملاء والديون من السحابة
+                // 2. مزامنة فورية وجلب لكافة العملاء والديون من السحابة
                 debtsRepository.syncFromCloud(userId)
-                // بدء الاستماع المباشر للتعديلات اللحظية
+                // 3. رفع كافة البيانات المحلية والمرحلة إلى سحابة Google Cloud فوراً
+                debtsRepository.uploadAllLocalDataToCloud(userId)
+                // 4. بدء الاستماع المباشر للتعديلات اللحظية
                 debtsRepository.startCloudListener(userId, viewModelScope)
                 // فحص النسخ الاحتياطية كخطة طوارئ
                 checkAndRestoreDebtsBackup(userId)

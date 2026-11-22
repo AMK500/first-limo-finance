@@ -175,4 +175,16 @@ class FinancialRepository(
             transactionDao.markAsSynced(item.id)
         }
     }
+
+    /**
+     * ترحيل كافة العمليات المالية المسجلة محلياً أو بحساب سابق إلى حساب Google الجديد
+     */
+    suspend fun migrateLocalDataToUser(newUserId: String) {
+        if (newUserId.isBlank()) return
+        try {
+            transactionDao.migrateTransactionsToUser(newUserId)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
 }

@@ -58,4 +58,17 @@ interface CustomerDao {
 
     @Query("UPDATE debt_transactions SET isDeleted = 1, updatedAt = :updatedAt WHERE linkedFinancialTransactionId = :linkedId")
     suspend fun softDeleteByLinkedId(linkedId: String, updatedAt: Long = System.currentTimeMillis())
+
+    // ================= ترحيل البيانات المحلية إلى حساب Google الجديد =================
+    @Query("UPDATE customers SET userId = :newUserId WHERE userId != :newUserId AND isSystem = 0")
+    suspend fun migrateCustomersToUser(newUserId: String): Int
+
+    @Query("UPDATE customers SET id = 'sys_first_limo_' || :newUserId, userId = :newUserId WHERE isSystem = 1 AND userId != :newUserId")
+    suspend fun migrateSystemCustomerToUser(newUserId: String): Int
+
+    @Query("UPDATE debt_transactions SET userId = :newUserId WHERE userId != :newUserId")
+    suspend fun migrateDebtTransactionsToUser(newUserId: String): Int
+
+    @Query("UPDATE debt_transactions SET customerId = 'sys_first_limo_' || :newUserId WHERE customerId LIKE 'sys_first_limo_%' AND customerId != ('sys_first_limo_' || :newUserId)")
+    suspend fun updateLinkedSystemCustomerId(newUserId: String): Int
 }

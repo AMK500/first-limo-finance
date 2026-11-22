@@ -37,7 +37,7 @@ class FinancialViewModel(application: Application) : AndroidViewModel(applicatio
             val pInfo = getApplication<Application>().packageManager.getPackageInfo(getApplication<Application>().packageName, 0)
             pInfo.versionName ?: "2.0.0"
         } catch (e: Exception) {
-            "2.0.6"
+            "2.0.7"
         }
 
     // هوية المستخدم الحالي
@@ -84,7 +84,12 @@ class FinancialViewModel(application: Application) : AndroidViewModel(applicatio
         _currentUserId.value = userId
         if (userId.isNotEmpty()) {
             viewModelScope.launch {
+                // 1. ترحيل كافة العمليات المالية المسجلة محلياً أو بحساب سابق إلى حساب Google الجديد
+                repository.migrateLocalDataToUser(userId)
+                // 2. مزامنة البيانات من السحابة
                 repository.syncFromCloud(userId)
+                // 3. رفع أي عمليات محلية أو مرحلة إلى السحابة فوراً
+                repository.pushUnsyncedTransactionsToRemote(userId)
             }
             listenToRemoteSync(userId)
             syncUnsynced(userId)

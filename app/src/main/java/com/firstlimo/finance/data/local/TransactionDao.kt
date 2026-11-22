@@ -33,4 +33,10 @@ interface TransactionDao {
 
     @Query("DELETE FROM transactions WHERE userId = :userId")
     suspend fun clearAllForUser(userId: String)
+
+    @Query("UPDATE transactions SET userId = :newUserId, isSynced = 0 WHERE userId != :newUserId")
+    suspend fun migrateTransactionsToUser(newUserId: String): Int
+
+    @Query("SELECT * FROM transactions WHERE userId = :userId AND isDeleted = 0")
+    suspend fun getTransactionsListForUser(userId: String): List<TransactionEntity>
 }
