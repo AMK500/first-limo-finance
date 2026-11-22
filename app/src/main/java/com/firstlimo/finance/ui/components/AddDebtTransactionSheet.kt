@@ -18,6 +18,8 @@ import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -168,41 +170,34 @@ fun AddDebtTransactionSheet(
 
     val typeColor = if (selectedType == DebtType.TOOK) EmeraldCollection else CrimsonExpense
 
-    val blockNestedScrollConnection = remember {
-        object : NestedScrollConnection {
-            override fun onPostScroll(
-                consumed: Offset,
-                available: Offset,
-                source: NestedScrollSource
-            ): Offset {
-                return available // استهلاك أي حركة سحب زائدة للأعلى أو للأسفل لمنع وصولها للشيت وإغلاقه
-            }
-        }
-    }
-
-    BackHandler {
-        onDismiss()
-    }
-
-    ModalBottomSheet(
-        onDismissRequest = { /* منع الإغلاق التلقائي بالسحب أو النقر بالخلفية */ },
-        sheetState = rememberModalBottomSheetState(
-            skipPartiallyExpanded = true,
-            confirmValueChange = { false } // منع الخروج بالسحب لأسفل نهائياً
-        ),
-        dragHandle = null, // إزالة المقبض الرمادي
-        containerColor = DarkSurface,
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            dismissOnClickOutside = false,
+            dismissOnBackPress = true
+        )
     ) {
-        Column(
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .nestedScroll(blockNestedScrollConnection)
-                .navigationBarsPadding() // مسافة أمان لتفادي أزرار الهاتف السفلية
-                .imePadding()
-                .verticalScroll(scrollState)
-                .padding(horizontal = 20.dp, vertical = 12.dp)
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.65f)),
+            contentAlignment = Alignment.BottomCenter
         ) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .imePadding(),
+                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+                colors = CardDefaults.cardColors(containerColor = DarkSurface)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(scrollState)
+                        .padding(horizontal = 20.dp, vertical = 12.dp)
+                ) {
             // الترويسة
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -558,6 +553,8 @@ fun AddDebtTransactionSheet(
             }
 
             Spacer(modifier = Modifier.height(16.dp))
+                }
+            }
         }
     }
 }
