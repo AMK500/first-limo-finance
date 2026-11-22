@@ -8,8 +8,10 @@ import com.firstlimo.finance.data.model.FinancialTransaction
 import com.firstlimo.finance.data.model.TransactionType
 import com.firstlimo.finance.data.remote.FirestoreSyncService
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.launch
 import java.util.UUID
 
 class DebtsRepository(
@@ -197,6 +199,50 @@ class DebtsRepository(
         }
         if (debtTransactions.isNotEmpty()) {
             customerDao.insertAllDebtTransactions(debtTransactions)
+        }
+    }
+
+    /**
+     * جلب كافة العملاء والديون من سحابة Firebase وحفظها محلياً فوراً
+     */
+    suspend fun syncFromCloud(userId: String) {
+        if (userId.isBlank()) return
+        try {
+            val remoteCustomers = syncService.fetchAllCustomers(userId)
+            if (remoteCustomers.isNotEmpty()) {
+                customerDao.insertAllCustomers(remoteCustomers)
+            }
+            val remoteDebts = syncService.fetchAllDebtTransactions(userId)
+            if (remoteDebts.isNotEmpty()) {
+                customerDao.insertAllDebtTransactions(remoteDebts)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    /**
+     * الاستماع الحي واللحظي لتحديثات العملاء والديون في السحابة
+     */
+    fun startCloudListener(userId: String, scope: kotlinx.coroutines.CoroutineScope) {
+        if (userId.isBlank()) return
+        scope.launch {
+            syncService.listenToUserCustomers(userId)
+                .catch { e -> e.printStackTrace() }
+                .collect { list ->
+                    if (list.isNotEmpty()) {
+                        customerDao.insertAllCustomers(list)
+                    }
+                }
+        }
+        scope.launch {
+            syncService.listenToUserDebtTransactions(userId)
+                .catch { e -> e.printStackTrace() }
+                .collect { list ->
+                    if (list.isNotEmpty()) {
+                        customerDao.insertAllDebtTransactions(list)
+                    }
+                }
         }
     }
 }

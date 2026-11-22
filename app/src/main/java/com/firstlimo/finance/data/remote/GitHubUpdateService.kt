@@ -84,8 +84,23 @@ class GitHubUpdateService(
      */
     private fun isNewerVersion(remote: String, current: String): Boolean {
         try {
-            val remoteParts = remote.split(".").map { it.toIntOrNull() ?: 0 }
-            val currentParts = current.split(".").map { it.toIntOrNull() ?: 0 }
+            fun normalize(v: String): List<Int> {
+                val clean = v.replace(Regex("""[^\d.]"""), "")
+                return clean.split(".")
+                    .filter { it.isNotBlank() }
+                    .flatMap { part ->
+                        if (part.length > 1 && part.startsWith("0")) {
+                            listOf(0, part.substring(1).toIntOrNull() ?: 0)
+                        } else {
+                            listOf(part.toIntOrNull() ?: 0)
+                        }
+                    }
+            }
+
+            val remoteParts = normalize(remote)
+            val currentParts = normalize(current)
+
+            if (remoteParts == currentParts) return false
 
             val maxLength = maxOf(remoteParts.size, currentParts.size)
             for (i in 0 until maxLength) {
@@ -96,7 +111,7 @@ class GitHubUpdateService(
             }
             return false
         } catch (e: Exception) {
-            return remote != current
+            return false
         }
     }
 

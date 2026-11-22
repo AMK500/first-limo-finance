@@ -71,6 +71,11 @@ class DebtsViewModel(application: Application) : AndroidViewModel(application) {
         if (userId.isNotEmpty()) {
             viewModelScope.launch {
                 debtsRepository.ensureSystemCustomerExists(userId)
+                // مزامنة فورية وجلب لكافة العملاء والديون من السحابة
+                debtsRepository.syncFromCloud(userId)
+                // بدء الاستماع المباشر للتعديلات اللحظية
+                debtsRepository.startCloudListener(userId, viewModelScope)
+                // فحص النسخ الاحتياطية كخطة طوارئ
                 checkAndRestoreDebtsBackup(userId)
             }
         }

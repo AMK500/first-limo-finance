@@ -83,6 +83,9 @@ class FinancialViewModel(application: Application) : AndroidViewModel(applicatio
     fun setUserId(userId: String) {
         _currentUserId.value = userId
         if (userId.isNotEmpty()) {
+            viewModelScope.launch {
+                repository.syncFromCloud(userId)
+            }
             listenToRemoteSync(userId)
             syncUnsynced(userId)
             // فحص هل توجد نسخة احتياطية محلية لاستعادتها تلقائياً إذا كانت قاعدة البيانات فارغة

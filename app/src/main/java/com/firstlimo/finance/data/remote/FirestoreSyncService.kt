@@ -54,6 +54,23 @@ class FirestoreSyncService(
         awaitClose { listener.remove() }
     }
 
+    suspend fun fetchAllTransactions(userId: String): List<FinancialTransaction> {
+        if (userId.isBlank()) return emptyList()
+        return try {
+            val snapshot = firestore.collection("users")
+                .document(userId)
+                .collection("transactions")
+                .get()
+                .await()
+            snapshot.documents.mapNotNull { doc ->
+                doc.data?.let { FinancialTransaction.fromMap(it) }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            emptyList()
+        }
+    }
+
     suspend fun uploadTransaction(userId: String, transaction: FinancialTransaction) {
         if (userId.isBlank()) return
         val docRef = firestore.collection("users")
@@ -124,6 +141,37 @@ class FirestoreSyncService(
         }
 
         awaitClose { listener.remove() }
+    }
+
+    suspend fun fetchAllCustomers(userId: String): List<CustomerEntity> {
+        if (userId.isBlank()) return emptyList()
+        return try {
+            val snapshot = firestore.collection("users")
+                .document(userId)
+                .collection("customers")
+                .get()
+                .await()
+            snapshot.documents.mapNotNull { doc ->
+                val data = doc.data ?: return@mapNotNull null
+                try {
+                    CustomerEntity(
+                        id = data["id"] as? String ?: doc.id,
+                        userId = data["userId"] as? String ?: userId,
+                        name = data["name"] as? String ?: "",
+                        phone = data["phone"] as? String,
+                        address = data["address"] as? String,
+                        notes = data["notes"] as? String,
+                        isSystem = (data["isSystem"] as? Boolean) ?: false,
+                        createdAt = (data["createdAt"] as? Number)?.toLong() ?: System.currentTimeMillis(),
+                        updatedAt = (data["updatedAt"] as? Number)?.toLong() ?: System.currentTimeMillis(),
+                        isDeleted = (data["isDeleted"] as? Boolean) ?: false
+                    )
+                } catch (_: Exception) { null }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            emptyList()
+        }
     }
 
     suspend fun uploadCustomer(userId: String, customer: CustomerEntity) {
@@ -221,6 +269,41 @@ class FirestoreSyncService(
         }
 
         awaitClose { listener.remove() }
+    }
+
+    suspend fun fetchAllDebtTransactions(userId: String): List<DebtTransactionEntity> {
+        if (userId.isBlank()) return emptyList()
+        return try {
+            val snapshot = firestore.collection("users")
+                .document(userId)
+                .collection("debt_transactions")
+                .get()
+                .await()
+            snapshot.documents.mapNotNull { doc ->
+                val data = doc.data ?: return@mapNotNull null
+                try {
+                    DebtTransactionEntity(
+                        id = data["id"] as? String ?: doc.id,
+                        userId = data["userId"] as? String ?: userId,
+                        customerId = data["customerId"] as? String ?: "",
+                        type = data["type"] as? String ?: "TOOK",
+                        amount = (data["amount"] as? Number)?.toDouble() ?: 0.0,
+                        dateString = data["dateString"] as? String ?: "",
+                        timeString = data["timeString"] as? String ?: "",
+                        notes = data["notes"] as? String ?: "",
+                        receiptImagePath = data["receiptImagePath"] as? String,
+                        linkedFinancialTransactionId = data["linkedFinancialTransactionId"] as? String,
+                        dueDateString = data["dueDateString"] as? String,
+                        createdAt = (data["createdAt"] as? Number)?.toLong() ?: System.currentTimeMillis(),
+                        updatedAt = (data["updatedAt"] as? Number)?.toLong() ?: System.currentTimeMillis(),
+                        isDeleted = (data["isDeleted"] as? Boolean) ?: false
+                    )
+                } catch (_: Exception) { null }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            emptyList()
+        }
     }
 
     suspend fun uploadDebtTransaction(userId: String, tx: DebtTransactionEntity) {

@@ -132,6 +132,21 @@ class FinancialRepository(
     }
 
     /**
+     * جلب كافة المعاملات المالية من سحابة Firebase فوراً
+     */
+    suspend fun syncFromCloud(userId: String) {
+        if (userId.isBlank()) return
+        try {
+            val remoteTransactions = firestoreSyncService.fetchAllTransactions(userId)
+            if (remoteTransactions.isNotEmpty()) {
+                syncRemoteTransactionsToLocal(remoteTransactions)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    /**
      * مزامنة السجلات القادمة من السحابة وحفظها في قاعدة البيانات المحلية
      */
     suspend fun syncRemoteTransactionsToLocal(remoteTransactions: List<FinancialTransaction>) {
