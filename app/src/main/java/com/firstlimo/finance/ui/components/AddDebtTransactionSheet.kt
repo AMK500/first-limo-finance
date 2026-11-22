@@ -23,6 +23,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.activity.compose.BackHandler
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -163,8 +168,24 @@ fun AddDebtTransactionSheet(
 
     val typeColor = if (selectedType == DebtType.TOOK) EmeraldCollection else CrimsonExpense
 
+    val blockNestedScrollConnection = remember {
+        object : NestedScrollConnection {
+            override fun onPostScroll(
+                consumed: Offset,
+                available: Offset,
+                source: NestedScrollSource
+            ): Offset {
+                return available // استهلاك أي حركة سحب زائدة للأعلى أو للأسفل لمنع وصولها للشيت وإغلاقه
+            }
+        }
+    }
+
+    BackHandler {
+        onDismiss()
+    }
+
     ModalBottomSheet(
-        onDismissRequest = onDismiss,
+        onDismissRequest = { /* منع الإغلاق التلقائي بالسحب أو النقر بالخلفية */ },
         sheetState = rememberModalBottomSheetState(
             skipPartiallyExpanded = true,
             confirmValueChange = { false } // منع الخروج بالسحب لأسفل نهائياً
@@ -176,6 +197,7 @@ fun AddDebtTransactionSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .nestedScroll(blockNestedScrollConnection)
                 .navigationBarsPadding() // مسافة أمان لتفادي أزرار الهاتف السفلية
                 .imePadding()
                 .verticalScroll(scrollState)

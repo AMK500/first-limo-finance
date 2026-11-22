@@ -32,7 +32,11 @@ fun AddCustomerDialog(
     var nameError by remember { mutableStateOf(false) }
 
     AlertDialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = { /* منع الإغلاق بالنقر بالخلفية */ },
+        properties = androidx.compose.ui.window.DialogProperties(
+            dismissOnClickOutside = false,
+            dismissOnBackPress = true
+        ),
         shape = RoundedCornerShape(22.dp),
         containerColor = DarkSurface,
         title = {

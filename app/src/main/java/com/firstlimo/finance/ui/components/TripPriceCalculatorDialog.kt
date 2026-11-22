@@ -73,8 +73,12 @@ fun TripPriceCalculatorDialog(
     }
 
     Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
+        onDismissRequest = { /* منع الإغلاق بالنقر بالخلفية */ },
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            dismissOnClickOutside = false,
+            dismissOnBackPress = true
+        )
     ) {
         Box(
             modifier = Modifier
