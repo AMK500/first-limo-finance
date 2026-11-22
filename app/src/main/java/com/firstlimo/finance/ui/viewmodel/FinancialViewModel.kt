@@ -22,7 +22,12 @@ class FinancialViewModel(application: Application) : AndroidViewModel(applicatio
 
     private val database = AppDatabase.getDatabase(application)
     private val firestoreSyncService = FirestoreSyncService()
-    private val repository = FinancialRepository(database.transactionDao(), firestoreSyncService, application)
+    private val repository = FinancialRepository(
+        transactionDao = database.transactionDao(),
+        firestoreSyncService = firestoreSyncService,
+        context = application,
+        customerDao = database.customerDao()
+    )
     private val networkMonitor = NetworkMonitor(application)
     private val updateService = GitHubUpdateService()
     private val prefs = application.getSharedPreferences("app_prefs", Context.MODE_PRIVATE)
@@ -30,9 +35,9 @@ class FinancialViewModel(application: Application) : AndroidViewModel(applicatio
     val currentAppVersion: String
         get() = try {
             val pInfo = getApplication<Application>().packageManager.getPackageInfo(getApplication<Application>().packageName, 0)
-            pInfo.versionName ?: "1.9.0"
+            pInfo.versionName ?: "2.0.0"
         } catch (e: Exception) {
-            "1.9.0"
+            "2.0.0"
         }
 
     // هوية المستخدم الحالي

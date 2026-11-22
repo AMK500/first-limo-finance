@@ -1,20 +1,26 @@
 package com.firstlimo.finance.data.repository
 
 import android.content.Context
+import com.firstlimo.finance.data.local.CustomerDao
+import com.firstlimo.finance.data.local.DebtTransactionEntity
+import com.firstlimo.finance.data.local.DebtType
 import com.firstlimo.finance.data.local.TransactionDao
 import com.firstlimo.finance.data.local.TransactionEntity
 import com.firstlimo.finance.data.model.FinancialSummary
 import com.firstlimo.finance.data.model.FinancialTransaction
+import com.firstlimo.finance.data.model.TransactionType
 import com.firstlimo.finance.data.remote.FirestoreSyncService
 import com.firstlimo.finance.utils.BackupManager
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
+import java.util.UUID
 
 class FinancialRepository(
     private val transactionDao: TransactionDao,
     private val firestoreSyncService: FirestoreSyncService,
-    private val context: Context? = null
+    private val context: Context? = null,
+    private val customerDao: CustomerDao? = null
 ) {
 
     /**
@@ -43,6 +49,34 @@ class FinancialRepository(
         val entity = TransactionEntity.fromDomain(transaction.copy(isSynced = false))
         transactionDao.insertTransaction(entity)
 
+        // الربط التلقائي بدفتر ديون فرست ليموزين
+        if (customerDao != null && (transaction.type == TransactionType.COLLECTION || transaction.type == TransactionType.EXPENSE)) {
+            try {
+                val sysCustomer = customerDao.getSystemCustomer(transaction.userId)
+                if (sysCustomer != null) {
+                    val existingDebt = customerDao.getDebtTransactionByLinkedId(transaction.id)
+                    val debtType = if (transaction.type == TransactionType.COLLECTION) DebtType.TOOK.name else DebtType.GAVE.name
+                    val debtEntity = DebtTransactionEntity(
+                        id = existingDebt?.id ?: UUID.randomUUID().toString(),
+                        userId = transaction.userId,
+                        customerId = sysCustomer.id,
+                        type = debtType,
+                        amount = transaction.amount,
+                        dateString = transaction.dateString,
+                        timeString = transaction.timeString,
+                        notes = transaction.notes,
+                        receiptImagePath = transaction.receiptImagePath,
+                        linkedFinancialTransactionId = transaction.id,
+                        createdAt = transaction.createdAt,
+                        updatedAt = System.currentTimeMillis()
+                    )
+                    customerDao.insertDebtTransaction(debtEntity)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+
         // حفظ نسخة احتياطية فورية على ذاكرة الهاتف العامة
         if (context != null) {
             val all = transactionDao.getAllTransactions(transaction.userId).firstOrNull()?.map { it.toDomain() } ?: emptyList()
@@ -63,6 +97,14 @@ class FinancialRepository(
     suspend fun deleteTransaction(transaction: FinancialTransaction) {
         val now = System.currentTimeMillis()
         transactionDao.softDeleteTransaction(transaction.id, now)
+
+        if (customerDao != null) {
+            try {
+                customerDao.softDeleteByLinkedId(transaction.id, now)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
 
         if (context != null) {
             val all = transactionDao.getAllTransactions(transaction.userId).firstOrNull()?.map { it.toDomain() } ?: emptyList()

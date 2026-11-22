@@ -2,6 +2,8 @@ package com.firstlimo.finance.utils
 
 import android.content.Context
 import android.os.Environment
+import com.firstlimo.finance.data.local.CustomerEntity
+import com.firstlimo.finance.data.local.DebtTransactionEntity
 import com.firstlimo.finance.data.model.FinancialTransaction
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -9,13 +11,21 @@ import java.io.File
 import java.io.FileReader
 import java.io.FileWriter
 
+data class ComprehensiveBackup(
+    val version: Int = 2,
+    val phoneNumber: String = "",
+    val financialTransactions: List<FinancialTransaction> = emptyList(),
+    val customers: List<CustomerEntity> = emptyList(),
+    val debtTransactions: List<DebtTransactionEntity> = emptyList(),
+    val backupTimestamp: Long = System.currentTimeMillis()
+)
+
 object BackupManager {
 
     private val gson = Gson()
 
     /**
      * المجلد العام على ذاكرة الهاتف الخارجية المشتركة (Documents/FirstLimoFinance)
-     * هذا المجلد لا يتم حذفه نهائياً عند مسح التطبيق أو إعادة تثبيته!
      */
     private fun getPublicBackupDirectory(context: Context): File {
         val docsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS)
@@ -27,27 +37,36 @@ object BackupManager {
     }
 
     /**
-     * حفظ نسخة احتياطية تلقائية بصيغة JSON على ذاكرة الهاتف الدائمة
+     * حفظ نسخة احتياطية شاملة بصيغة JSON على ذاكرة الهاتف الدائمة
      */
-    fun autoSaveBackup(context: Context, transactions: List<FinancialTransaction>, phoneNumber: String): File? {
+    fun autoSaveBackup(
+        context: Context,
+        transactions: List<FinancialTransaction>,
+        phoneNumber: String,
+        customers: List<CustomerEntity> = emptyList(),
+        debtTransactions: List<DebtTransactionEntity> = emptyList()
+    ): File? {
         return try {
             val dir = getPublicBackupDirectory(context)
             val backupFile = File(dir, "backup_${phoneNumber.trim().ifEmpty { "default" }}.json")
             val generalBackupFile = File(dir, "first_limo_latest_backup.json")
 
-            val jsonString = gson.toJson(transactions)
+            val backupData = ComprehensiveBackup(
+                version = 2,
+                phoneNumber = phoneNumber,
+                financialTransactions = transactions,
+                customers = customers,
+                debtTransactions = debtTransactions,
+                backupTimestamp = System.currentTimeMillis()
+            )
+
+            val jsonString = gson.toJson(backupData)
 
             // كتابة النسخة الخاصة برقم الهاتف
-            val writer1 = FileWriter(backupFile)
-            writer1.write(jsonString)
-            writer1.flush()
-            writer1.close()
+            FileWriter(backupFile).use { it.write(jsonString) }
 
             // كتابة النسخة العامة
-            val writer2 = FileWriter(generalBackupFile)
-            writer2.write(jsonString)
-            writer2.flush()
-            writer2.close()
+            FileWriter(generalBackupFile).use { it.write(jsonString) }
 
             backupFile
         } catch (e: Exception) {
@@ -57,39 +76,55 @@ object BackupManager {
     }
 
     /**
-     * فحص هل توجد نسخة احتياطية سابقة محفوظة على الهاتف لنفس رقم الهاتف
+     * استرجاع النسخة الاحتياطية الشاملة مع التوافق التام مع النسخ القديمة
      */
-    fun hasExistingBackup(context: Context, phoneNumber: String): Boolean {
-        return try {
-            val dir = getPublicBackupDirectory(context)
-            val phoneFile = File(dir, "backup_${phoneNumber.trim()}.json")
-            val generalFile = File(dir, "first_limo_latest_backup.json")
-            (phoneFile.exists() && phoneFile.length() > 0) || (generalFile.exists() && generalFile.length() > 0)
-        } catch (e: Exception) {
-            false
-        }
-    }
-
-    /**
-     * استرجاع كافة العمليات المحفوظة في النسخة الاحتياطية على الهاتف
-     */
-    fun restoreBackup(context: Context, phoneNumber: String): List<FinancialTransaction>? {
+    fun restoreComprehensiveBackup(context: Context, phoneNumber: String): ComprehensiveBackup? {
         return try {
             val dir = getPublicBackupDirectory(context)
             val phoneFile = File(dir, "backup_${phoneNumber.trim()}.json")
             val generalFile = File(dir, "first_limo_latest_backup.json")
 
-            val targetFile = if (phoneFile.exists() && phoneFile.length() > 0) phoneFile else generalFile
-            if (!targetFile.exists() || targetFile.length() == 0L) return null
+            val fileToRead = when {
+                phoneFile.exists() && phoneFile.length() > 0 -> phoneFile
+                generalFile.exists() && generalFile.length() > 0 -> generalFile
+                else -> null
+            } ?: return null
 
-            val reader = FileReader(targetFile)
+            val jsonString = FileReader(fileToRead).use { it.readText() }
+
+            // أولاً: محاولة قراءة التنسيق الشامل الجديد
+            try {
+                val backup = gson.fromJson(jsonString, ComprehensiveBackup::class.java)
+                if (backup != null && (backup.financialTransactions.isNotEmpty() || backup.customers.isNotEmpty())) {
+                    return backup
+                }
+            } catch (e: Exception) {
+                // ليس التنسيق الجديد
+            }
+
+            // ثانياً: محاولة قراءة التنسيق القديم (قائمة معاملات مالية مباشرة)
             val type = object : TypeToken<List<FinancialTransaction>>() {}.type
-            val list: List<FinancialTransaction>? = gson.fromJson(reader, type)
-            reader.close()
-            list
+            val legacyList: List<FinancialTransaction>? = gson.fromJson(jsonString, type)
+            if (!legacyList.isNullOrEmpty()) {
+                return ComprehensiveBackup(
+                    version = 1,
+                    phoneNumber = phoneNumber,
+                    financialTransactions = legacyList,
+                    customers = emptyList(),
+                    debtTransactions = emptyList()
+                )
+            }
+            null
         } catch (e: Exception) {
             e.printStackTrace()
             null
         }
+    }
+
+    /**
+     * استرجاع كافة العمليات المحفوظة في النسخة الاحتياطية (للتوافق مع الاستدعاءات الحالية)
+     */
+    fun restoreBackup(context: Context, phoneNumber: String): List<FinancialTransaction>? {
+        return restoreComprehensiveBackup(context, phoneNumber)?.financialTransactions
     }
 }

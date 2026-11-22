@@ -20,9 +20,11 @@ import androidx.fragment.app.FragmentActivity
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.firstlimo.finance.data.local.CustomerEntity
 import com.firstlimo.finance.ui.screens.*
 import com.firstlimo.finance.ui.theme.*
 import com.firstlimo.finance.ui.viewmodel.AuthViewModel
+import com.firstlimo.finance.ui.viewmodel.DebtsViewModel
 import com.firstlimo.finance.ui.viewmodel.FinancialViewModel
 import com.firstlimo.finance.utils.BiometricHelper
 
@@ -33,6 +35,7 @@ class MainActivity : FragmentActivity() {
     }
 
     private val financialViewModel: FinancialViewModel by viewModels()
+    private val debtsViewModel: DebtsViewModel by viewModels()
     private val authViewModel: AuthViewModel by viewModels()
 
     // حالة فتح التطبيق بالبصمة
@@ -106,10 +109,12 @@ class MainActivity : FragmentActivity() {
                 } else {
                     val navController = rememberNavController()
                     val currentUserId = authViewModel.currentUserId
+                    var activeCustomer by remember { mutableStateOf<CustomerEntity?>(null) }
 
                     LaunchedEffect(currentUserId) {
                         if (currentUserId != null) {
                             financialViewModel.setUserId(currentUserId)
+                            debtsViewModel.setUserId(currentUserId)
                         }
                     }
 
@@ -124,6 +129,7 @@ class MainActivity : FragmentActivity() {
                                 authViewModel = authViewModel,
                                 onAuthSuccess = { uid ->
                                     financialViewModel.setUserId(uid)
+                                    debtsViewModel.setUserId(uid)
                                     navController.navigate("dashboard") {
                                         popUpTo("auth") { inclusive = true }
                                     }
@@ -132,18 +138,39 @@ class MainActivity : FragmentActivity() {
                         }
 
                         composable("dashboard") {
-                            DashboardScreen(
-                                viewModel = financialViewModel,
+                            MainScreen(
+                                financialViewModel = financialViewModel,
+                                debtsViewModel = debtsViewModel,
+                                authViewModel = authViewModel,
+                                onNavigateToCustomerDetail = { customer ->
+                                    activeCustomer = customer
+                                    debtsViewModel.selectCustomer(customer.id)
+                                    navController.navigate("customer_detail")
+                                },
                                 onNavigateToHistory = {
                                     navController.navigate("history")
                                 },
                                 onNavigateToAnalytics = {
                                     navController.navigate("analytics")
                                 },
-                                onNavigateToSettings = {
-                                    navController.navigate("settings")
+                                onLoggedOut = {
+                                    navController.navigate("auth") {
+                                        popUpTo("dashboard") { inclusive = true }
+                                    }
                                 }
                             )
+                        }
+
+                        composable("customer_detail") {
+                            if (activeCustomer != null) {
+                                CustomerDetailScreen(
+                                    customer = activeCustomer!!,
+                                    viewModel = debtsViewModel,
+                                    onBack = { navController.popBackStack() }
+                                )
+                            } else {
+                                navController.popBackStack()
+                            }
                         }
 
                         composable("analytics") {
