@@ -174,12 +174,16 @@ fun AddTransactionSheet(
         }
     }
 
+    val navBarHeight = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    val bottomMargin = maxOf(navBarHeight, 60.dp)
+
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(
             usePlatformDefaultWidth = false,
             dismissOnClickOutside = false,
-            dismissOnBackPress = true
+            dismissOnBackPress = true,
+            decorFitsSystemWindows = false
         )
     ) {
         Box(
@@ -191,9 +195,9 @@ fun AddTransactionSheet(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .navigationBarsPadding()
+                    .padding(bottom = bottomMargin)
                     .imePadding(),
-                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp, bottomStart = 16.dp, bottomEnd = 16.dp),
                 colors = CardDefaults.cardColors(containerColor = DarkSurface)
             ) {
                 Column(
@@ -723,9 +727,7 @@ fun AddTransactionSheet(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-            Spacer(modifier = Modifier.navigationBarsPadding())
-            Spacer(modifier = Modifier.height(28.dp))
+            Spacer(modifier = Modifier.height(20.dp))
                 }
             }
         }
