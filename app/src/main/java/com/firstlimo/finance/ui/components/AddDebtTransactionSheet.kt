@@ -349,51 +349,7 @@ fun AddDebtTransactionSheet(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // لوحة مفاتيح الآلة الحاسبة (العمليات على اليمين)
-            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-                Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = DarkCardSurface.copy(alpha = 0.7f),
-                    border = BorderStroke(1.dp, DarkCardBorder),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(modifier = Modifier.fillMaxWidth().padding(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            CalcButton(text = "÷", color = AccentGold, textColor = AccentGold, modifier = Modifier.weight(1f), onClick = { onOperatorClick("÷") })
-                            CalcIconButton(icon = Icons.AutoMirrored.Filled.Backspace, tint = TextSecondary, modifier = Modifier.weight(1.5f), onClick = { onBackspaceClick() })
-                            CalcButton(text = "C", color = CrimsonExpense, textColor = CrimsonExpense, containerColor = CrimsonExpense.copy(alpha = 0.15f), modifier = Modifier.weight(1.5f), onClick = { onClearClick() })
-                        }
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            CalcButton(text = "×", color = AccentGold, textColor = AccentGold, modifier = Modifier.weight(1f), onClick = { onOperatorClick("×") })
-                            CalcButton(text = "9", modifier = Modifier.weight(1f), onClick = { onDigitClick("9") })
-                            CalcButton(text = "8", modifier = Modifier.weight(1f), onClick = { onDigitClick("8") })
-                            CalcButton(text = "7", modifier = Modifier.weight(1f), onClick = { onDigitClick("7") })
-                        }
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            CalcButton(text = "-", color = AccentGold, textColor = AccentGold, modifier = Modifier.weight(1f), onClick = { onOperatorClick("-") })
-                            CalcButton(text = "6", modifier = Modifier.weight(1f), onClick = { onDigitClick("6") })
-                            CalcButton(text = "5", modifier = Modifier.weight(1f), onClick = { onDigitClick("5") })
-                            CalcButton(text = "4", modifier = Modifier.weight(1f), onClick = { onDigitClick("4") })
-                        }
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            CalcButton(text = "+", color = AccentGold, textColor = AccentGold, modifier = Modifier.weight(1f), onClick = { onOperatorClick("+") })
-                            CalcButton(text = "3", modifier = Modifier.weight(1f), onClick = { onDigitClick("3") })
-                            CalcButton(text = "2", modifier = Modifier.weight(1f), onClick = { onDigitClick("2") })
-                            CalcButton(text = "1", modifier = Modifier.weight(1f), onClick = { onDigitClick("1") })
-                        }
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            CalcButton(text = "= (احسب)", color = AccentGold, textColor = DarkBackground, containerColor = AccentGold, modifier = Modifier.weight(1.3f), isBold = true, onClick = { onEqualsClick() })
-                            CalcButton(text = ".", modifier = Modifier.weight(0.9f), onClick = { onDigitClick(".") })
-                            CalcButton(text = "00", modifier = Modifier.weight(0.9f), onClick = { onDigitClick("00") })
-                            CalcButton(text = "0", modifier = Modifier.weight(0.9f), onClick = { onDigitClick("0") })
-                        }
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            // خانة الملاحظات
+// خانة الملاحظات
             OutlinedTextField(
                 value = notesText,
                 onValueChange = { notesText = it },
@@ -514,6 +470,8 @@ fun AddDebtTransactionSheet(
 
             Spacer(modifier = Modifier.height(18.dp))
 
+            Spacer(modifier = Modifier.height(16.dp))
+
             // زر الحفظ الفخم
             Button(
                 onClick = {
@@ -553,6 +511,52 @@ fun AddDebtTransactionSheet(
             }
 
             Spacer(modifier = Modifier.height(16.dp))
+
+            // لوحة مفاتيح الآلة الحاسبة (العمليات على اليمين)
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = DarkCardSurface.copy(alpha = 0.7f),
+                    border = BorderStroke(1.dp, DarkCardBorder),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.fillMaxWidth().padding(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            CalcButton(text = "÷", color = AccentGold, textColor = AccentGold, modifier = Modifier.weight(1f), onClick = { onOperatorClick("÷") })
+                            CalcIconButton(icon = Icons.AutoMirrored.Filled.Backspace, tint = TextSecondary, modifier = Modifier.weight(1.5f), onClick = { onBackspaceClick() })
+                            CalcButton(text = "C", color = CrimsonExpense, textColor = CrimsonExpense, containerColor = CrimsonExpense.copy(alpha = 0.15f), modifier = Modifier.weight(1.5f), onClick = { onClearClick() })
+                        }
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            CalcButton(text = "×", color = AccentGold, textColor = AccentGold, modifier = Modifier.weight(1f), onClick = { onOperatorClick("×") })
+                            CalcButton(text = "9", modifier = Modifier.weight(1f), onClick = { onDigitClick("9") })
+                            CalcButton(text = "8", modifier = Modifier.weight(1f), onClick = { onDigitClick("8") })
+                            CalcButton(text = "7", modifier = Modifier.weight(1f), onClick = { onDigitClick("7") })
+                        }
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            CalcButton(text = "-", color = AccentGold, textColor = AccentGold, modifier = Modifier.weight(1f), onClick = { onOperatorClick("-") })
+                            CalcButton(text = "6", modifier = Modifier.weight(1f), onClick = { onDigitClick("6") })
+                            CalcButton(text = "5", modifier = Modifier.weight(1f), onClick = { onDigitClick("5") })
+                            CalcButton(text = "4", modifier = Modifier.weight(1f), onClick = { onDigitClick("4") })
+                        }
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            CalcButton(text = "+", color = AccentGold, textColor = AccentGold, modifier = Modifier.weight(1f), onClick = { onOperatorClick("+") })
+                            CalcButton(text = "3", modifier = Modifier.weight(1f), onClick = { onDigitClick("3") })
+                            CalcButton(text = "2", modifier = Modifier.weight(1f), onClick = { onDigitClick("2") })
+                            CalcButton(text = "1", modifier = Modifier.weight(1f), onClick = { onDigitClick("1") })
+                        }
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                            CalcButton(text = "= (احسب)", color = AccentGold, textColor = DarkBackground, containerColor = AccentGold, modifier = Modifier.weight(1.3f), isBold = true, onClick = { onEqualsClick() })
+                            CalcButton(text = ".", modifier = Modifier.weight(0.9f), onClick = { onDigitClick(".") })
+                            CalcButton(text = "00", modifier = Modifier.weight(0.9f), onClick = { onDigitClick("00") })
+                            CalcButton(text = "0", modifier = Modifier.weight(0.9f), onClick = { onDigitClick("0") })
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.navigationBarsPadding())
+            Spacer(modifier = Modifier.height(28.dp))
                 }
             }
         }

@@ -426,132 +426,7 @@ fun AddTransactionSheet(
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            // ==========================================
-            // لوحة مفاتيح الآلة الحاسبة المدمجة (أزرار العمليات على اليمين)
-            // ==========================================
-            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
-                Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = DarkCardSurface.copy(alpha = 0.7f),
-                    border = BorderStroke(1.dp, DarkCardBorder),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        // الصف الأول: ÷ على اليمين، ثم ⌫، ثم C
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            CalcButton(
-                                text = "÷",
-                                color = AccentGold,
-                                textColor = AccentGold,
-                                containerColor = DarkSurface,
-                                modifier = Modifier.weight(1f),
-                                onClick = { onOperatorClick("÷") }
-                            )
-                            CalcIconButton(
-                                icon = Icons.AutoMirrored.Filled.Backspace,
-                                tint = TextSecondary,
-                                containerColor = DarkSurface,
-                                modifier = Modifier.weight(1.5f),
-                                onClick = { onBackspaceClick() }
-                            )
-                            CalcButton(
-                                text = "C",
-                                color = CrimsonExpense,
-                                textColor = CrimsonExpense,
-                                containerColor = CrimsonExpense.copy(alpha = 0.15f),
-                                modifier = Modifier.weight(1.5f),
-                                onClick = { onClearClick() }
-                            )
-                        }
-
-                        // الصف الثاني: × على اليمين، ثم 9، 8، 7
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            CalcButton(
-                                text = "×",
-                                color = AccentGold,
-                                textColor = AccentGold,
-                                containerColor = DarkSurface,
-                                modifier = Modifier.weight(1f),
-                                onClick = { onOperatorClick("×") }
-                            )
-                            CalcButton(text = "9", modifier = Modifier.weight(1f), onClick = { onDigitClick("9") })
-                            CalcButton(text = "8", modifier = Modifier.weight(1f), onClick = { onDigitClick("8") })
-                            CalcButton(text = "7", modifier = Modifier.weight(1f), onClick = { onDigitClick("7") })
-                        }
-
-                        // الصف الثالث: - على اليمين، ثم 6، 5، 4
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            CalcButton(
-                                text = "-",
-                                color = AccentGold,
-                                textColor = AccentGold,
-                                containerColor = DarkSurface,
-                                modifier = Modifier.weight(1f),
-                                onClick = { onOperatorClick("-") }
-                            )
-                            CalcButton(text = "6", modifier = Modifier.weight(1f), onClick = { onDigitClick("6") })
-                            CalcButton(text = "5", modifier = Modifier.weight(1f), onClick = { onDigitClick("5") })
-                            CalcButton(text = "4", modifier = Modifier.weight(1f), onClick = { onDigitClick("4") })
-                        }
-
-                        // الصف الرابع: + على اليمين، ثم 3، 2، 1
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            CalcButton(
-                                text = "+",
-                                color = AccentGold,
-                                textColor = AccentGold,
-                                containerColor = DarkSurface,
-                                modifier = Modifier.weight(1f),
-                                onClick = { onOperatorClick("+") }
-                            )
-                            CalcButton(text = "3", modifier = Modifier.weight(1f), onClick = { onDigitClick("3") })
-                            CalcButton(text = "2", modifier = Modifier.weight(1f), onClick = { onDigitClick("2") })
-                            CalcButton(text = "1", modifier = Modifier.weight(1f), onClick = { onDigitClick("1") })
-                        }
-
-                        // الصف الخامس: = (احسب) على اليمين، ثم .، 00، 0
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            // زر اليساوي الفخم على اليمين
-                            CalcButton(
-                                text = "= (احسب)",
-                                color = AccentGold,
-                                textColor = DarkBackground,
-                                containerColor = AccentGold,
-                                modifier = Modifier.weight(1.3f),
-                                isBold = true,
-                                onClick = { onEqualsClick() }
-                            )
-                            CalcButton(text = ".", modifier = Modifier.weight(0.9f), onClick = { onDigitClick(".") })
-                            CalcButton(text = "00", modifier = Modifier.weight(0.9f), onClick = { onDigitClick("00") })
-                            CalcButton(text = "0", modifier = Modifier.weight(0.9f), onClick = { onDigitClick("0") })
-                        }
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            // ==========================================
+// ==========================================
             // خانة التفاصيل أو الملاحظات (تظهر كيبورد الجهاز العادية)
             // ==========================================
             OutlinedTextField(
@@ -676,6 +551,8 @@ fun AddTransactionSheet(
 
             Spacer(modifier = Modifier.height(18.dp))
 
+            Spacer(modifier = Modifier.height(16.dp))
+
             // زر الحفظ الفخم
             Button(
                 onClick = {
@@ -722,6 +599,133 @@ fun AddTransactionSheet(
             }
 
             Spacer(modifier = Modifier.height(16.dp))
+
+            // ==========================================
+            // لوحة مفاتيح الآلة الحاسبة المدمجة (أزرار العمليات على اليمين)
+            // ==========================================
+            CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = DarkCardSurface.copy(alpha = 0.7f),
+                    border = BorderStroke(1.dp, DarkCardBorder),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        // الصف الأول: ÷ على اليمين، ثم ⌫، ثم C
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            CalcButton(
+                                text = "÷",
+                                color = AccentGold,
+                                textColor = AccentGold,
+                                containerColor = DarkSurface,
+                                modifier = Modifier.weight(1f),
+                                onClick = { onOperatorClick("÷") }
+                            )
+                            CalcIconButton(
+                                icon = Icons.AutoMirrored.Filled.Backspace,
+                                tint = TextSecondary,
+                                containerColor = DarkSurface,
+                                modifier = Modifier.weight(1.5f),
+                                onClick = { onBackspaceClick() }
+                            )
+                            CalcButton(
+                                text = "C",
+                                color = CrimsonExpense,
+                                textColor = CrimsonExpense,
+                                containerColor = CrimsonExpense.copy(alpha = 0.15f),
+                                modifier = Modifier.weight(1.5f),
+                                onClick = { onClearClick() }
+                            )
+                        }
+
+                        // الصف الثاني: × على اليمين، ثم 9، 8، 7
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            CalcButton(
+                                text = "×",
+                                color = AccentGold,
+                                textColor = AccentGold,
+                                containerColor = DarkSurface,
+                                modifier = Modifier.weight(1f),
+                                onClick = { onOperatorClick("×") }
+                            )
+                            CalcButton(text = "9", modifier = Modifier.weight(1f), onClick = { onDigitClick("9") })
+                            CalcButton(text = "8", modifier = Modifier.weight(1f), onClick = { onDigitClick("8") })
+                            CalcButton(text = "7", modifier = Modifier.weight(1f), onClick = { onDigitClick("7") })
+                        }
+
+                        // الصف الثالث: - على اليمين، ثم 6، 5، 4
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            CalcButton(
+                                text = "-",
+                                color = AccentGold,
+                                textColor = AccentGold,
+                                containerColor = DarkSurface,
+                                modifier = Modifier.weight(1f),
+                                onClick = { onOperatorClick("-") }
+                            )
+                            CalcButton(text = "6", modifier = Modifier.weight(1f), onClick = { onDigitClick("6") })
+                            CalcButton(text = "5", modifier = Modifier.weight(1f), onClick = { onDigitClick("5") })
+                            CalcButton(text = "4", modifier = Modifier.weight(1f), onClick = { onDigitClick("4") })
+                        }
+
+                        // الصف الرابع: + على اليمين، ثم 3، 2، 1
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            CalcButton(
+                                text = "+",
+                                color = AccentGold,
+                                textColor = AccentGold,
+                                containerColor = DarkSurface,
+                                modifier = Modifier.weight(1f),
+                                onClick = { onOperatorClick("+") }
+                            )
+                            CalcButton(text = "3", modifier = Modifier.weight(1f), onClick = { onDigitClick("3") })
+                            CalcButton(text = "2", modifier = Modifier.weight(1f), onClick = { onDigitClick("2") })
+                            CalcButton(text = "1", modifier = Modifier.weight(1f), onClick = { onDigitClick("1") })
+                        }
+
+                        // الصف الخامس: = (احسب) على اليمين، ثم .، 00، 0
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                        ) {
+                            // زر اليساوي الفخم على اليمين
+                            CalcButton(
+                                text = "= (احسب)",
+                                color = AccentGold,
+                                textColor = DarkBackground,
+                                containerColor = AccentGold,
+                                modifier = Modifier.weight(1.3f),
+                                isBold = true,
+                                onClick = { onEqualsClick() }
+                            )
+                            CalcButton(text = ".", modifier = Modifier.weight(0.9f), onClick = { onDigitClick(".") })
+                            CalcButton(text = "00", modifier = Modifier.weight(0.9f), onClick = { onDigitClick("00") })
+                            CalcButton(text = "0", modifier = Modifier.weight(0.9f), onClick = { onDigitClick("0") })
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.navigationBarsPadding())
+            Spacer(modifier = Modifier.height(28.dp))
                 }
             }
         }
