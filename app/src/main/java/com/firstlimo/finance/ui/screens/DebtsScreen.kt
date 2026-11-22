@@ -37,6 +37,7 @@ fun DebtsScreen(
     val searchQuery by viewModel.searchQuery.collectAsState()
 
     var showAddDialog by remember { mutableStateOf(false) }
+    var customerToEdit by remember { mutableStateOf<CustomerEntity?>(null) }
     var customerToDelete by remember { mutableStateOf<CustomerEntity?>(null) }
     val formatter = DecimalFormat("#,##0.00")
 
@@ -202,6 +203,7 @@ fun DebtsScreen(
                         item = item,
                         onClick = { onCustomerClick(item.customer) },
                         onTogglePin = { viewModel.togglePinCustomer(item.customer) },
+                        onEdit = if (!item.customer.isSystem) { { customerToEdit = item.customer } } else null,
                         onDelete = if (!item.customer.isSystem) { { customerToDelete = item.customer } } else null
                     )
                 }
@@ -218,6 +220,18 @@ fun DebtsScreen(
             onConfirm = { name, phone, address, notes ->
                 viewModel.addCustomer(name, phone, address, notes)
                 showAddDialog = false
+            }
+        )
+    }
+
+    // نافذة تعديل بيانات العميل
+    if (customerToEdit != null) {
+        AddCustomerDialog(
+            initialCustomer = customerToEdit,
+            onDismiss = { customerToEdit = null },
+            onConfirm = { name, phone, address, notes ->
+                viewModel.updateCustomer(customerToEdit!!, name, phone, address, notes)
+                customerToEdit = null
             }
         )
     }
@@ -256,6 +270,7 @@ fun CustomerCardItem(
     item: CustomerWithBalance,
     onClick: () -> Unit,
     onTogglePin: () -> Unit,
+    onEdit: (() -> Unit)? = null,
     onDelete: (() -> Unit)? = null
 ) {
     val customer = item.customer
@@ -265,6 +280,8 @@ fun CustomerCardItem(
     val isPositive = netBalance > 0
     val isNegative = netBalance < 0
     val balanceColor = if (isPositive) EmeraldCollection else if (isNegative) CrimsonExpense else TextSecondary
+
+    var showMenu by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier
@@ -383,7 +400,7 @@ fun CustomerCardItem(
                 }
             }
 
-            // رصيد العميل وأزرار الإجراءات السريعة على اليسار
+            // رصيد العميل وقائمة الخيارات (الثلاث نقاط) على اليسار
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
@@ -401,31 +418,87 @@ fun CustomerCardItem(
 
                 Spacer(modifier = Modifier.width(4.dp))
 
-                // زر التثبيت
-                IconButton(
-                    onClick = onTogglePin,
-                    modifier = Modifier.size(34.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.PushPin,
-                        contentDescription = if (customer.isPinned) "إلغاء التثبيت" else "تثبيت العميل في الأعلى",
-                        tint = if (customer.isPinned) AccentGold else TextTertiary.copy(alpha = 0.45f),
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
-
-                // زر الحذف (إذا لم يكن حساب الشركة)
-                if (!customer.isSystem && onDelete != null) {
+                // قائمة الثلاث نقاط ⋮
+                Box {
                     IconButton(
-                        onClick = onDelete,
-                        modifier = Modifier.size(34.dp)
+                        onClick = { showMenu = true },
+                        modifier = Modifier.size(36.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = "حذف العميل",
-                            tint = CrimsonExpense.copy(alpha = 0.75f),
-                            modifier = Modifier.size(18.dp)
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = "خيارات العميل",
+                            tint = TextSecondary,
+                            modifier = Modifier.size(20.dp)
                         )
+                    }
+
+                    DropdownMenu(
+                        expanded = showMenu,
+                        onDismissRequest = { showMenu = false },
+                        modifier = Modifier.background(DarkCardSurface)
+                    ) {
+                        // 1. تعديل بيانات العميل
+                        if (!customer.isSystem && onEdit != null) {
+                            DropdownMenuItem(
+                                text = { Text("تعديل العميل", color = TextPrimary, fontSize = 13.sp, fontWeight = FontWeight.Medium) },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.Edit,
+                                        contentDescription = null,
+                                        tint = AccentBlue,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                },
+                                onClick = {
+                                    showMenu = false
+                                    onEdit()
+                                }
+                            )
+                        }
+
+                        // 2. تثبيت العميل في الأعلى / إلغاء التثبيت
+                        DropdownMenuItem(
+                            text = {
+                                Text(
+                                    text = if (customer.isPinned) "إلغاء التثبيت" else "تثبيت في الأعلى",
+                                    color = if (customer.isPinned) AccentGold else TextPrimary,
+                                    fontSize = 13.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.PushPin,
+                                    contentDescription = null,
+                                    tint = if (customer.isPinned) AccentGold else TextSecondary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            },
+                            onClick = {
+                                showMenu = false
+                                onTogglePin()
+                            }
+                        )
+
+                        // 3. حذف العميل
+                        if (!customer.isSystem && onDelete != null) {
+                            HorizontalDivider(color = DarkCardBorder.copy(alpha = 0.5f))
+                            DropdownMenuItem(
+                                text = { Text("حذف العميل", color = CrimsonExpense, fontSize = 13.sp, fontWeight = FontWeight.Bold) },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = null,
+                                        tint = CrimsonExpense,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                },
+                                onClick = {
+                                    showMenu = false
+                                    onDelete()
+                                }
+                            )
+                        }
                     }
                 }
             }

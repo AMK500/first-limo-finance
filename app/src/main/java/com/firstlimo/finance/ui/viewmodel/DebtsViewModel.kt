@@ -115,6 +115,25 @@ class DebtsViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun updateCustomer(
+        customer: CustomerEntity,
+        name: String,
+        phone: String?,
+        address: String?,
+        notes: String?
+    ) {
+        viewModelScope.launch {
+            val updated = customer.copy(
+                name = name.trim(),
+                phone = phone?.trim()?.ifBlank { null },
+                address = address?.trim()?.ifBlank { null },
+                notes = notes?.trim()?.ifBlank { null },
+                updatedAt = System.currentTimeMillis()
+            )
+            debtsRepository.saveCustomer(updated)
+        }
+    }
+
     fun deleteCustomer(customerId: String) {
         viewModelScope.launch {
             debtsRepository.deleteCustomer(customerId, _currentUserId.value)

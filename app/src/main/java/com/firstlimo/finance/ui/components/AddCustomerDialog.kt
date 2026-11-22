@@ -7,6 +7,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Error
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material3.*
@@ -18,17 +19,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.firstlimo.finance.data.local.CustomerEntity
 import com.firstlimo.finance.ui.theme.*
 
 @Composable
 fun AddCustomerDialog(
+    initialCustomer: CustomerEntity? = null,
     onDismiss: () -> Unit,
     onConfirm: (name: String, phone: String?, address: String?, notes: String?) -> Unit
 ) {
-    var name by remember { mutableStateOf("") }
-    var phone by remember { mutableStateOf("") }
-    var address by remember { mutableStateOf("") }
-    var notes by remember { mutableStateOf("") }
+    val isEditing = initialCustomer != null
+    var name by remember { mutableStateOf(initialCustomer?.name ?: "") }
+    var phone by remember { mutableStateOf(initialCustomer?.phone ?: "") }
+    var address by remember { mutableStateOf(initialCustomer?.address ?: "") }
+    var notes by remember { mutableStateOf(initialCustomer?.notes ?: "") }
     var nameError by remember { mutableStateOf(false) }
 
     AlertDialog(
@@ -53,7 +57,7 @@ fun AddCustomerDialog(
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
-                            imageVector = Icons.Default.PersonAdd,
+                            imageVector = if (isEditing) Icons.Default.Edit else Icons.Default.PersonAdd,
                             contentDescription = null,
                             tint = AccentBlue,
                             modifier = Modifier.size(20.dp)
@@ -61,7 +65,7 @@ fun AddCustomerDialog(
                     }
                     Spacer(modifier = Modifier.width(10.dp))
                     Text(
-                        text = "إضافة عميل جديد",
+                        text = if (isEditing) "تعديل بيانات العميل" else "إضافة عميل جديد",
                         fontSize = 17.sp,
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary
@@ -240,7 +244,12 @@ fun AddCustomerDialog(
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = AccentBlue)
             ) {
-                Text("تأكيد", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = DarkBackground)
+                Text(
+                    text = if (isEditing) "حفظ التعديلات" else "تأكيد الإضافة",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = DarkBackground
+                )
             }
         }
     )

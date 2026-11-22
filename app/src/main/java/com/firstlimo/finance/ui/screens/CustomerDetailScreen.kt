@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.sp
 import com.firstlimo.finance.data.local.CustomerEntity
 import com.firstlimo.finance.data.local.DebtTransactionEntity
 import com.firstlimo.finance.data.local.DebtType
+import com.firstlimo.finance.ui.components.AddCustomerDialog
 import com.firstlimo.finance.ui.components.AddDebtTransactionSheet
 import com.firstlimo.finance.ui.theme.*
 import com.firstlimo.finance.ui.viewmodel.DebtsViewModel
@@ -51,6 +52,7 @@ fun CustomerDetailScreen(
     var editingTransaction by remember { mutableStateOf<DebtTransactionEntity?>(null) }
     var transactionToDelete by remember { mutableStateOf<DebtTransactionEntity?>(null) }
     var showDeleteCustomerDialog by remember { mutableStateOf(false) }
+    var showEditCustomerDialog by remember { mutableStateOf(false) }
     var selectedPeriod by remember { mutableStateOf("الكل") }
 
     val todayStr = com.firstlimo.finance.utils.DateUtils.getCurrentDate()
@@ -116,23 +118,79 @@ fun CustomerDetailScreen(
                     }
                 },
                 actions = {
-                    // زر التثبيت في الأعلى 📌
-                    IconButton(onClick = { viewModel.togglePinCustomer(currentCustomer) }) {
-                        Icon(
-                            imageVector = Icons.Default.PushPin,
-                            contentDescription = if (currentCustomer.isPinned) "إلغاء التثبيت" else "تثبيت العميل في الأعلى",
-                            tint = if (currentCustomer.isPinned) AccentGold else TextSecondary
-                        )
-                    }
+                    var showMenu by remember { mutableStateOf(false) }
+                    Box {
+                        IconButton(onClick = { showMenu = true }) {
+                            Icon(Icons.Default.MoreVert, contentDescription = "خيارات العميل", tint = TextPrimary)
+                        }
 
-                    // زر حذف العميل (متاح فقط للعملاء العاديين)
-                    if (!customer.isSystem) {
-                        IconButton(onClick = { showDeleteCustomerDialog = true }) {
-                            Icon(
-                                imageVector = Icons.Default.Delete,
-                                contentDescription = "حذف العميل",
-                                tint = CrimsonExpense
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false },
+                            modifier = Modifier.background(DarkCardSurface)
+                        ) {
+                            // 1. تعديل بيانات العميل
+                            if (!currentCustomer.isSystem) {
+                                DropdownMenuItem(
+                                    text = { Text("تعديل بيانات العميل", color = TextPrimary, fontSize = 13.sp, fontWeight = FontWeight.Medium) },
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = Icons.Default.Edit,
+                                            contentDescription = null,
+                                            tint = AccentBlue,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    },
+                                    onClick = {
+                                        showMenu = false
+                                        showEditCustomerDialog = true
+                                    }
+                                )
+                            }
+
+                            // 2. تثبيت في الأعلى / إلغاء التثبيت
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        text = if (currentCustomer.isPinned) "إلغاء التثبيت" else "تثبيت العميل في الأعلى",
+                                        color = if (currentCustomer.isPinned) AccentGold else TextPrimary,
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.PushPin,
+                                        contentDescription = null,
+                                        tint = if (currentCustomer.isPinned) AccentGold else TextSecondary,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                },
+                                onClick = {
+                                    showMenu = false
+                                    viewModel.togglePinCustomer(currentCustomer)
+                                }
                             )
+
+                            // 3. حذف العميل
+                            if (!currentCustomer.isSystem) {
+                                HorizontalDivider(color = DarkCardBorder.copy(alpha = 0.5f))
+                                DropdownMenuItem(
+                                    text = { Text("حذف العميل", color = CrimsonExpense, fontSize = 13.sp, fontWeight = FontWeight.Bold) },
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = Icons.Default.Delete,
+                                            contentDescription = null,
+                                            tint = CrimsonExpense,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    },
+                                    onClick = {
+                                        showMenu = false
+                                        showDeleteCustomerDialog = true
+                                    }
+                                )
+                            }
                         }
                     }
                 },
@@ -518,6 +576,18 @@ fun CustomerDetailScreen(
                 )
                 showAddSheet = false
                 editingTransaction = null
+            }
+        )
+    }
+
+    // نافذة تعديل بيانات العميل
+    if (showEditCustomerDialog) {
+        AddCustomerDialog(
+            initialCustomer = currentCustomer,
+            onDismiss = { showEditCustomerDialog = false },
+            onConfirm = { name, phone, address, notes ->
+                viewModel.updateCustomer(currentCustomer, name, phone, address, notes)
+                showEditCustomerDialog = false
             }
         )
     }
