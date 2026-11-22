@@ -121,7 +121,8 @@ class DebtsViewModel(application: Application) : AndroidViewModel(application) {
         date: String,
         time: String,
         receiptPath: String?,
-        editingId: String? = null
+        editingId: String? = null,
+        dueDate: String? = null
     ) {
         viewModelScope.launch {
             val transaction = DebtTransactionEntity(
@@ -133,7 +134,8 @@ class DebtsViewModel(application: Application) : AndroidViewModel(application) {
                 dateString = date,
                 timeString = time,
                 notes = notes,
-                receiptImagePath = receiptPath
+                receiptImagePath = receiptPath,
+                dueDateString = dueDate
             )
             debtsRepository.saveDebtTransaction(transaction, isSystemCustomer)
         }

@@ -48,14 +48,29 @@ fun CustomerDetailScreen(
     var sheetType by remember { mutableStateOf(DebtType.TOOK) }
     var editingTransaction by remember { mutableStateOf<DebtTransactionEntity?>(null) }
     var transactionToDelete by remember { mutableStateOf<DebtTransactionEntity?>(null) }
+    var selectedPeriod by remember { mutableStateOf("الكل") }
 
-    val totalTook = transactions.filter { it.type == DebtType.TOOK.name }.sumOf { it.amount }
-    val totalGave = transactions.filter { it.type == DebtType.GAVE.name }.sumOf { it.amount }
+    val todayStr = com.firstlimo.finance.utils.DateUtils.getCurrentDate()
+    val filteredTransactions = remember(transactions, selectedPeriod) {
+        when (selectedPeriod) {
+            "اليوم" -> transactions.filter { it.dateString == todayStr }
+            "هذا الأسبوع" -> transactions.filter { com.firstlimo.finance.utils.DateUtils.isWithinDays(it.dateString, 7) }
+            "هذا الشهر" -> {
+                val prefix = todayStr.substringBeforeLast("-")
+                transactions.filter { it.dateString.startsWith(prefix) }
+            }
+            else -> transactions
+        }
+    }
+
+    val totalTook = filteredTransactions.filter { it.type == DebtType.TOOK.name }.sumOf { it.amount }
+    val totalGave = filteredTransactions.filter { it.type == DebtType.GAVE.name }.sumOf { it.amount }
     val netBalance = totalTook - totalGave
 
     val formatter = DecimalFormat("#,##0.00")
 
     Scaffold(
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             TopAppBar(
                 title = {
@@ -101,11 +116,13 @@ fun CustomerDetailScreen(
             )
         },
         bottomBar = {
-            // شريط الزرين السفليين العريضين (أخذت أخضر / أعطيت أحمر)
+            // شريط الزرين السفليين العريضين (أخذت أخضر / أعطيت أحمر) مع مسافة أمان لتفادي أزرار الهاتف
             Surface(
                 color = DarkSurface,
                 border = BorderStroke(1.dp, DarkCardBorder),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding() // مسافة أمان شاملة
             ) {
                 Row(
                     modifier = Modifier
@@ -259,6 +276,30 @@ fun CustomerDetailScreen(
                 }
             }
 
+            // شريط فلاتر الفترة الزمنية
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    listOf("الكل", "اليوم", "هذا الأسبوع", "هذا الشهر").forEach { period ->
+                        val isSelected = selectedPeriod == period
+                        FilterChip(
+                            selected = isSelected,
+                            onClick = { selectedPeriod = period },
+                            label = { Text(period, fontSize = 12.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal) },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = AccentBlue.copy(alpha = 0.2f),
+                                selectedLabelColor = AccentBlue,
+                                containerColor = DarkCardSurface,
+                                labelColor = TextSecondary
+                            ),
+                            border = BorderStroke(1.dp, if (isSelected) AccentBlue else DarkCardBorder)
+                        )
+                    }
+                }
+            }
+
             // ترويسة سجل المعاملات
             item {
                 Row(
@@ -267,7 +308,7 @@ fun CustomerDetailScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "سجل المعاملات (${transactions.size})",
+                        text = "سجل المعاملات (${filteredTransactions.size})",
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
                         color = TextPrimary
@@ -276,7 +317,7 @@ fun CustomerDetailScreen(
             }
 
             // قائمة المعاملات
-            if (transactions.isEmpty()) {
+            if (filteredTransactions.isEmpty()) {
                 item {
                     Box(
                         modifier = Modifier
@@ -287,13 +328,13 @@ fun CustomerDetailScreen(
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Icon(Icons.Default.ReceiptLong, contentDescription = null, tint = TextTertiary, modifier = Modifier.size(48.dp))
                             Spacer(modifier = Modifier.height(10.dp))
-                            Text("لا توجد معاملات مسجلة لهذا العميل بعد", color = TextSecondary, fontSize = 14.sp)
+                            Text("لا توجد معاملات مسجلة في هذه الفترة", color = TextSecondary, fontSize = 14.sp)
                             Text("استخدم زري 'أخذت' أو 'أعطيت' بالأسفل لبدء التسجيل", color = TextTertiary, fontSize = 12.sp)
                         }
                     }
                 }
             } else {
-                items(transactions, key = { it.id }) { tx ->
+                items(filteredTransactions, key = { it.id }) { tx ->
                     val isTook = tx.type == DebtType.TOOK.name
                     val itemColor = if (isTook) EmeraldCollection else CrimsonExpense
 
@@ -358,6 +399,27 @@ fun CustomerDetailScreen(
                                         fontSize = 11.sp,
                                         color = TextTertiary
                                     )
+
+                                    // تنبيه موعد الاستحقاق (سلفيات / جمعيات)
+                                    if (!tx.dueDateString.isNullOrBlank()) {
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        val isPast = com.firstlimo.finance.utils.DateUtils.isPastDate(tx.dueDateString)
+                                        val isToday = com.firstlimo.finance.utils.DateUtils.isToday(tx.dueDateString)
+                                        val badgeColor = if (isPast) CrimsonExpense else if (isToday) AccentGold else AccentBlue
+                                        val badgeText = if (isPast) "مستحق السداد (${tx.dueDateString})" else if (isToday) "يستحق اليوم (${tx.dueDateString})" else "موعد السداد: ${tx.dueDateString}"
+                                        Surface(
+                                            shape = RoundedCornerShape(4.dp),
+                                            color = badgeColor.copy(alpha = 0.15f)
+                                        ) {
+                                            Text(
+                                                text = badgeText,
+                                                fontSize = 10.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = badgeColor,
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                            )
+                                        }
+                                    }
                                 }
                             }
 
@@ -417,7 +479,7 @@ fun CustomerDetailScreen(
                 showAddSheet = false
                 editingTransaction = null
             },
-            onSave = { type, amount, notes, date, time, receiptPath ->
+            onSave = { type, amount, notes, date, time, receiptPath, dueDate ->
                 viewModel.addDebtTransaction(
                     customerId = customer.id,
                     isSystemCustomer = customer.isSystem,
@@ -427,7 +489,8 @@ fun CustomerDetailScreen(
                     date = date,
                     time = time,
                     receiptPath = receiptPath,
-                    editingId = editingTransaction?.id
+                    editingId = editingTransaction?.id,
+                    dueDate = dueDate
                 )
                 showAddSheet = false
                 editingTransaction = null

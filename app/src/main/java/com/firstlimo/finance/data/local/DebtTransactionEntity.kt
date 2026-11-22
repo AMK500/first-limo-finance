@@ -22,6 +22,7 @@ data class DebtTransactionEntity(
     val notes: String = "",
     val receiptImagePath: String? = null,
     val linkedFinancialTransactionId: String? = null, // للربط التلقائي بجدول المالية
+    val dueDateString: String? = null, // موعد الاستحقاق (اختياري للجمعيات والديون المؤجلة)
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis(),
     val isDeleted: Boolean = false

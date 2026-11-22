@@ -12,6 +12,7 @@ room = "2.6.1"
 ksp = "2.0.21-1.0.28"
 firebaseBom = "33.6.0"
 googleGms = "4.4.2"
+playServicesAuth = "21.3.0"
 coroutines = "1.9.0"
 okhttp = "4.12.0"
 gson = "2.11.0"
@@ -37,10 +38,11 @@ androidx-room-runtime = { group = "androidx.room", name = "room-runtime", versio
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 
-# Firebase
+# Firebase & Google Auth
 firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
 firebase-auth-ktx = { group = "com.google.firebase", name = "firebase-auth-ktx" }
 firebase-firestore-ktx = { group = "com.google.firebase", name = "firebase-firestore-ktx" }
+play-services-auth = { group = "com.google.android.gms", name = "play-services-auth", version.ref = "playServicesAuth" }
 
 # Coroutines
 kotlinx-coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }

@@ -169,13 +169,18 @@ fun AddTransactionSheet(
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        sheetState = rememberModalBottomSheetState(
+            skipPartiallyExpanded = true,
+            confirmValueChange = { false } // منع الإغلاق بالسحب لأسفل نهائياً
+        ),
+        dragHandle = null,
         containerColor = DarkSurface,
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .navigationBarsPadding() // مسافة أمان لتفادي أزرار الهاتف
                 .imePadding()
                 .verticalScroll(scrollState)
                 .padding(horizontal = 20.dp, vertical = 12.dp)

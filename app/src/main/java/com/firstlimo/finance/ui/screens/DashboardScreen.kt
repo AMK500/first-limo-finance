@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -42,6 +43,7 @@ fun DashboardScreen(
     var showAddSheet by remember { mutableStateOf(false) }
     var selectedSheetType by remember { mutableStateOf(TransactionType.COLLECTION) }
     var editingTransaction by remember { mutableStateOf<FinancialTransaction?>(null) }
+    var showTripCalculator by remember { mutableStateOf(false) }
 
     // فحص التحديثات بهدوء عند بدء الشاشة
     LaunchedEffect(Unit) {
@@ -49,6 +51,7 @@ fun DashboardScreen(
     }
 
     Scaffold(
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             TopAppBar(
                 title = {
@@ -240,6 +243,41 @@ fun DashboardScreen(
                 }
             }
 
+            // أداة تسعير المشاوير والبنزين
+            item {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showTripCalculator = true },
+                    shape = RoundedCornerShape(14.dp),
+                    color = DarkCardSurface,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, DarkCardBorder)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(vertical = 12.dp, horizontal = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .background(AccentBlue.copy(alpha = 0.2f), RoundedCornerShape(10.dp)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Default.Calculate, contentDescription = null, tint = AccentBlue, modifier = Modifier.size(20.dp))
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text("حاسبة تسعير المشاوير والبنزين", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+                                Text("حساب فوري لتكلفة الكيلومتر والرسوم وصافي الربح", fontSize = 11.sp, color = TextSecondary)
+                            }
+                        }
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(16.dp))
+                    }
+                }
+            }
+
             // 6. آخر العمليات
             item {
                 Row(
@@ -337,6 +375,13 @@ fun DashboardScreen(
             downloadProgress = downloadProgress,
             onUpdateClick = { viewModel.startInAppUpdate() },
             onDismiss = { viewModel.dismissUpdateDialog() }
+        )
+    }
+
+    // حاسبة تسعير المشاوير
+    if (showTripCalculator) {
+        TripPriceCalculatorDialog(
+            onDismiss = { showTripCalculator = false }
         )
     }
 }

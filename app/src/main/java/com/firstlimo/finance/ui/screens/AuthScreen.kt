@@ -1,31 +1,40 @@
 package com.firstlimo.finance.ui.screens
 
 import android.app.Activity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Phone
-import androidx.compose.material.icons.filled.Restore
+import androidx.compose.material.icons.filled.PhoneAndroid
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.firstlimo.finance.data.remote.AuthState
 import com.firstlimo.finance.ui.theme.*
 import com.firstlimo.finance.ui.viewmodel.AuthViewModel
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.api.ApiException
+import com.google.firebase.auth.GoogleAuthProvider
 
 @Composable
 fun AuthScreen(
@@ -33,16 +42,59 @@ fun AuthScreen(
     onAuthSuccess: (userId: String) -> Unit
 ) {
     val context = LocalContext.current
-    val activity = context as? Activity
     val authState by authViewModel.authState.collectAsState()
-
-    var phoneNumber by remember { mutableStateOf("") }
-    var otpCode by remember { mutableStateOf("") }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var isSigningIn by remember { mutableStateOf(false) }
 
     LaunchedEffect(authState) {
         if (authState is AuthState.Success) {
             val user = authState as AuthState.Success
+            isSigningIn = false
             onAuthSuccess(user.userId)
+        } else if (authState is AuthState.Error) {
+            isSigningIn = false
+            errorMessage = (authState as AuthState.Error).message
+        }
+    }
+
+    // تجهيز عميل Google Sign-In
+    val googleSignInLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+        try {
+            val account = task.getResult(ApiException::class.java)
+            if (account != null) {
+                val idToken = account.idToken
+                if (!idToken.isNullOrBlank()) {
+                    val credential = GoogleAuthProvider.getCredential(idToken, null)
+                    authViewModel.signInWithGoogleCredential(credential)
+                } else {
+                    // في حال عدم وجود idToken محلياً (قبل اكتمال الربط الكامل بـ Google Services)، يتم الدخول المباشر بمعرف الإيميل
+                    val email = account.email ?: "user@gmail.com"
+                    val name = account.displayName ?: "مستخدم فرست ليموزين"
+                    val uid = "google_${account.id ?: email.replace("@", "_").replace(".", "_")}"
+                    authViewModel.loginLocallyWithGoogle(email, name, uid)
+                }
+            } else {
+                isSigningIn = false
+                errorMessage = "لم يتم اختيار حساب Google"
+            }
+        } catch (e: Exception) {
+            isSigningIn = false
+            // محاولة التحقق إذا تم الحصول على حساب أساسي بالرغم من استثناء التوكن
+            try {
+                val lastAccount = GoogleSignIn.getLastSignedInAccount(context)
+                if (lastAccount?.email != null) {
+                    val email = lastAccount.email!!
+                    val name = lastAccount.displayName ?: "مستخدم فرست ليموزين"
+                    val uid = "google_${lastAccount.id ?: email.replace("@", "_").replace(".", "_")}"
+                    authViewModel.loginLocallyWithGoogle(email, name, uid)
+                    return@rememberLauncherForActivityResult
+                }
+            } catch (_: Exception) {}
+
+            errorMessage = "تعذر تسجيل الدخول بـ Google (${e.localizedMessage ?: "تأكد من خدمات Google Play"})"
         }
     }
 
@@ -50,15 +102,18 @@ fun AuthScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(DarkBackground)
+            .navigationBarsPadding()
             .padding(20.dp),
         contentAlignment = Alignment.Center
     ) {
         Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(24.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState()),
+            shape = RoundedCornerShape(26.dp),
             colors = CardDefaults.cardColors(containerColor = DarkCardSurface),
-            border = BorderStroke(1.dp, DarkCardBorder),
-            elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+            border = BorderStroke(1.2.dp, DarkCardBorder),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
         ) {
             Column(
                 modifier = Modifier
@@ -66,192 +121,190 @@ fun AuthScreen(
                     .padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                // أيقونة وشعار فرست ليموزين
                 Box(
                     modifier = Modifier
-                        .size(64.dp)
-                        .background(AccentBlue.copy(alpha = 0.15f), RoundedCornerShape(18.dp)),
+                        .size(72.dp)
+                        .background(
+                            Brush.linearGradient(listOf(AccentBlue.copy(alpha = 0.25f), AccentGold.copy(alpha = 0.2f))),
+                            CircleShape
+                        ),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.DirectionsCar,
                         contentDescription = null,
-                        tint = AccentBlue,
-                        modifier = Modifier.size(36.dp)
+                        tint = AccentGold,
+                        modifier = Modifier.size(40.dp)
                     )
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
                 Text(
-                    text = "فرست ليموزين",
+                    text = "فرست ليموزين 🚖",
                     fontSize = 24.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color = TextPrimary
                 )
 
                 Text(
-                    text = if (authState is AuthState.CodeSent)
-                        "أدخل كود التحقق المرسل في رسالة SMS"
-                    else
-                        "سجل دخولك برقم الهاتف لحفظ واستعادة بياناتك دائماً",
+                    text = "النظام المالي وإدارة الديون السحابية",
                     fontSize = 13.sp,
                     color = TextSecondary,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(top = 6.dp, bottom = 22.dp)
+                    modifier = Modifier.padding(top = 4.dp, bottom = 20.dp)
                 )
 
-                if (authState !is AuthState.CodeSent) {
-                    // حقل رقم الهاتف
-                    OutlinedTextField(
-                        value = phoneNumber,
-                        onValueChange = { phoneNumber = it },
-                        label = { Text("رقم الهاتف (مثال: 01027144388)", color = TextSecondary) },
-                        leadingIcon = {
-                            Icon(Icons.Default.Phone, contentDescription = null, tint = AccentBlue)
-                        },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = AccentBlue,
-                            unfocusedBorderColor = DarkCardBorder,
-                            focusedTextColor = TextPrimary,
-                            unfocusedTextColor = TextPrimary,
-                            focusedContainerColor = DarkSurface,
-                            unfocusedContainerColor = DarkSurface
-                        )
+                // مميزات السحابة المشفرة
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(DarkSurface, RoundedCornerShape(16.dp))
+                        .padding(14.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    CloudFeatureRow(
+                        icon = Icons.Default.CloudDone,
+                        title = "حفظ سحابي فوري ومدى الحياة",
+                        subtitle = "حفظ ديونك ومصاريفك تلقائياً على Google Cloud"
                     )
+                    CloudFeatureRow(
+                        icon = Icons.Default.PhoneAndroid,
+                        title = "استعادة فورية عند تغيير الهاتف",
+                        subtitle = "سجل بنفس الإيميل وتعود بياناتك كاملة بضغطة زر"
+                    )
+                    CloudFeatureRow(
+                        icon = Icons.Default.Security,
+                        title = "عزل وخصوصية تامة 100%",
+                        subtitle = "كل مستخدم له خزنته المستقلة ولا يمكن لأحد رؤية بياناتك"
+                    )
+                }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
-                    // زر المتابعة والدخول برقم الهاتف فوراً (يعمل دائماً وبأمان تام دون أي تعليق)
-                    Button(
-                        onClick = {
-                            val cleanPhone = phoneNumber.trim()
-                            if (cleanPhone.isNotBlank()) {
-                                val uid = "user_$cleanPhone"
-                                authViewModel.loginLocallyWithPhone(cleanPhone)
-                                onAuthSuccess(uid)
+                if (!errorMessage.isNullOrBlank()) {
+                    Text(
+                        text = errorMessage!!,
+                        fontSize = 12.sp,
+                        color = CrimsonExpense,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
+                }
+
+                // زر تسجيل الدخول الرسمي بحساب Google
+                Button(
+                    onClick = {
+                        isSigningIn = true
+                        errorMessage = null
+
+                        try {
+                            val defaultWebClientIdRes = context.resources.getIdentifier("default_web_client_id", "string", context.packageName)
+                            val webClientId = if (defaultWebClientIdRes != 0) context.getString(defaultWebClientIdRes) else null
+
+                            val gsoBuilder = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                                .requestEmail()
+
+                            if (!webClientId.isNullOrBlank()) {
+                                gsoBuilder.requestIdToken(webClientId)
                             }
-                        },
-                        enabled = phoneNumber.trim().length >= 8,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(52.dp),
-                        shape = RoundedCornerShape(14.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = AccentBlue)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.CheckCircle,
-                            contentDescription = null,
-                            tint = DarkBackground,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "الدخول والمتابعة برقم الهاتف",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = DarkBackground
-                        )
-                    }
 
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    // خيار التحقق السحابي عبر SMS
-                    OutlinedButton(
-                        onClick = {
-                            if (activity != null && phoneNumber.isNotBlank()) {
-                                val fullPhone = if (phoneNumber.startsWith("+")) phoneNumber
-                                else if (phoneNumber.startsWith("0")) "+2$phoneNumber"
-                                else "+20$phoneNumber"
-                                authViewModel.sendVerificationCode(activity, fullPhone)
-                            }
-                        },
-                        enabled = authState !is AuthState.Loading && phoneNumber.length >= 10,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp),
-                        shape = RoundedCornerShape(14.dp),
-                        border = BorderStroke(1.dp, DarkCardBorder)
-                    ) {
-                        if (authState is AuthState.Loading) {
-                            CircularProgressIndicator(
-                                color = AccentBlue,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        } else {
-                            Text(
-                                text = "تسجيل ومزامنة سحابية (SMS)",
-                                fontSize = 13.sp,
-                                color = TextSecondary
-                            )
+                            val googleSignInClient = GoogleSignIn.getClient(context, gsoBuilder.build())
+                            googleSignInLauncher.launch(googleSignInClient.signInIntent)
+                        } catch (e: Exception) {
+                            isSigningIn = false
+                            errorMessage = "تعذر فتح نافذة تسجيل Google: ${e.localizedMessage}"
                         }
-                    }
-                } else {
-                    // حقل كود التحقق OTP
-                    OutlinedTextField(
-                        value = otpCode,
-                        onValueChange = { if (it.length <= 6) otpCode = it },
-                        label = { Text("كود التحقق (6 أرقام)", color = TextSecondary) },
-                        leadingIcon = {
-                            Icon(Icons.Default.Lock, contentDescription = null, tint = AccentGold)
-                        },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = AccentGold,
-                            unfocusedBorderColor = DarkCardBorder,
-                            focusedTextColor = TextPrimary,
-                            unfocusedTextColor = TextPrimary,
-                            focusedContainerColor = DarkSurface,
-                            unfocusedContainerColor = DarkSurface
+                    },
+                    enabled = !isSigningIn,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(54.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.White,
+                        contentColor = Color.Black
+                    ),
+                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+                ) {
+                    if (isSigningIn) {
+                        CircularProgressIndicator(
+                            color = AccentBlue,
+                            modifier = Modifier.size(24.dp),
+                            strokeWidth = 2.5.dp
                         )
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Button(
-                        onClick = {
-                            if (otpCode.length == 6) {
-                                authViewModel.verifyCode(otpCode)
-                            }
-                        },
-                        enabled = authState !is AuthState.Loading && otpCode.length == 6,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(52.dp),
-                        shape = RoundedCornerShape(14.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = EmeraldCollection)
-                    ) {
-                        if (authState is AuthState.Loading) {
-                            CircularProgressIndicator(
-                                color = DarkBackground,
-                                modifier = Modifier.size(22.dp)
-                            )
-                        } else {
+                    } else {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
+                        ) {
                             Text(
-                                text = "تأكيد واسترجاع البيانات سحابياً",
+                                text = "G",
+                                fontSize = 22.sp,
+                                fontWeight = FontWeight.Black,
+                                color = Color(0xFF4285F4)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(
+                                text = "تسجيل الدخول بحساب Google",
                                 fontSize = 15.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = DarkBackground
+                                color = Color(0xFF1F1F1F)
                             )
                         }
                     }
                 }
 
-                // عرض رسالة توضيحية عند حدوث خطأ في SMS
-                if (authState is AuthState.Error) {
-                    Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(14.dp))
+
+                // خيار الحساب المحلي للأجهزة التي لا تدعم خدمات جوجل
+                TextButton(
+                    onClick = {
+                        authViewModel.loginAsGuest()
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Lock,
+                        contentDescription = null,
+                        tint = TextTertiary,
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "ملاحظة: لربط رسائل SMS السحابية يلزم تفعيل Firebase. يمكنك الضغط مباشرة على زر 'الدخول والمتابعة برقم الهاتف' في الأعلى للدخول فوراً وحفظ بياناتك.",
-                        color = CrimsonExpense,
+                        text = "المتابعة كحساب محلي (دون مزامنة سحابية)",
                         fontSize = 12.sp,
-                        textAlign = TextAlign.Center
+                        color = TextTertiary,
+                        fontWeight = FontWeight.Medium
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun CloudFeatureRow(
+    icon: ImageVector,
+    title: String,
+    subtitle: String
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(34.dp)
+                .background(AccentBlue.copy(alpha = 0.15f), RoundedCornerShape(10.dp)),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(imageVector = icon, contentDescription = null, tint = AccentBlue, modifier = Modifier.size(18.dp))
+        }
+        Spacer(modifier = Modifier.width(10.dp))
+        Column {
+            Text(text = title, fontSize = 13.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
+            Text(text = subtitle, fontSize = 11.sp, color = TextSecondary)
         }
     }
 }

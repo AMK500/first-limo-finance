@@ -10,6 +10,9 @@ interface CustomerDao {
     @Query("SELECT * FROM customers WHERE userId = :userId AND isDeleted = 0 ORDER BY isSystem DESC, updatedAt DESC")
     fun getCustomers(userId: String): Flow<List<CustomerEntity>>
 
+    @Query("SELECT * FROM customers WHERE userId = :userId AND isDeleted = 0")
+    suspend fun getCustomersList(userId: String): List<CustomerEntity>
+
     @Query("SELECT * FROM customers WHERE userId = :userId AND id = :customerId AND isDeleted = 0 LIMIT 1")
     suspend fun getCustomerById(userId: String, customerId: String): CustomerEntity?
 
@@ -34,6 +37,9 @@ interface CustomerDao {
 
     @Query("SELECT * FROM debt_transactions WHERE userId = :userId AND isDeleted = 0 ORDER BY createdAt DESC")
     fun getAllDebtTransactions(userId: String): Flow<List<DebtTransactionEntity>>
+
+    @Query("SELECT * FROM debt_transactions WHERE userId = :userId AND isDeleted = 0")
+    suspend fun getAllDebtTransactionsList(userId: String): List<DebtTransactionEntity>
 
     @Query("SELECT * FROM debt_transactions WHERE linkedFinancialTransactionId = :linkedId AND isDeleted = 0 LIMIT 1")
     suspend fun getDebtTransactionByLinkedId(linkedId: String): DebtTransactionEntity?

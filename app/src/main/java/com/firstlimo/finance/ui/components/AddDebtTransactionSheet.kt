@@ -48,7 +48,7 @@ fun AddDebtTransactionSheet(
     initialType: DebtType,
     editingTransaction: DebtTransactionEntity? = null,
     onDismiss: () -> Unit,
-    onSave: (type: DebtType, amount: Double, notes: String, date: String, time: String, receiptPath: String?) -> Unit
+    onSave: (type: DebtType, amount: Double, notes: String, date: String, time: String, receiptPath: String?, dueDate: String?) -> Unit
 ) {
     val context = LocalContext.current
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -70,6 +70,7 @@ fun AddDebtTransactionSheet(
     var notesText by remember { mutableStateOf(editingTransaction?.notes ?: "") }
     var dateText by remember { mutableStateOf(editingTransaction?.dateString ?: DateUtils.getCurrentDate()) }
     var timeText by remember { mutableStateOf(editingTransaction?.timeString ?: DateUtils.getCurrentTime()) }
+    var dueDateText by remember { mutableStateOf(editingTransaction?.dueDateString ?: "") }
     var receiptImagePath by remember { mutableStateOf(editingTransaction?.receiptImagePath) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
@@ -164,13 +165,18 @@ fun AddDebtTransactionSheet(
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        sheetState = rememberModalBottomSheetState(
+            skipPartiallyExpanded = true,
+            confirmValueChange = { false } // منع الخروج بالسحب لأسفل نهائياً
+        ),
+        dragHandle = null, // إزالة المقبض الرمادي
         containerColor = DarkSurface,
         shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .navigationBarsPadding() // مسافة أمان لتفادي أزرار الهاتف السفلية
                 .imePadding()
                 .verticalScroll(scrollState)
                 .padding(horizontal = 20.dp, vertical = 12.dp)
@@ -424,6 +430,25 @@ fun AddDebtTransactionSheet(
                 )
             }
 
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // موعد الاستحقاق (اختياري للجمعيات وسلفيات الديون)
+            OutlinedTextField(
+                value = dueDateText,
+                onValueChange = { dueDateText = it },
+                label = { Text("موعد استحقاق السداد (اختياري، مثال: 2026-12-01)", fontSize = 12.sp, color = TextSecondary) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = AccentGold,
+                    unfocusedBorderColor = DarkCardBorder,
+                    focusedTextColor = TextPrimary,
+                    unfocusedTextColor = TextPrimary,
+                    focusedContainerColor = DarkCardSurface,
+                    unfocusedContainerColor = DarkCardSurface
+                )
+            )
+
             Spacer(modifier = Modifier.height(12.dp))
 
             // إرفاق فاتورة
@@ -496,7 +521,7 @@ fun AddDebtTransactionSheet(
                         errorMessage = "يرجى إدخال مبلغ صحيح أكبر من صفر"
                         return@Button
                     }
-                    onSave(selectedType, finalAmount, notesText.trim(), dateText.trim(), timeText.trim(), receiptImagePath)
+                    onSave(selectedType, finalAmount, notesText.trim(), dateText.trim(), timeText.trim(), receiptImagePath, dueDateText.trim().ifBlank { null })
                 },
                 modifier = Modifier.fillMaxWidth().height(52.dp),
                 shape = RoundedCornerShape(14.dp),

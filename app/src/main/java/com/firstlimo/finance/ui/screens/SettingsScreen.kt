@@ -47,6 +47,7 @@ fun SettingsScreen(
     var isBiometricActive by remember { mutableStateOf(BiometricHelper.isBiometricEnabled(context)) }
 
     Scaffold(
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         topBar = {
             TopAppBar(
                 title = {
@@ -114,8 +115,8 @@ fun SettingsScreen(
                                 color = TextSecondary
                             )
                             Text(
-                                text = authViewModel.currentPhoneNumber ?: "المستخدم الحالي",
-                                fontSize = 17.sp,
+                                text = authViewModel.currentUserEmail ?: authViewModel.currentUserName ?: "حساب Google متصل",
+                                fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = TextPrimary
                             )

@@ -6,6 +6,7 @@ import com.firstlimo.finance.data.model.CustomerWithBalance
 import com.firstlimo.finance.data.model.DebtsSummary
 import com.firstlimo.finance.data.model.FinancialTransaction
 import com.firstlimo.finance.data.model.TransactionType
+import com.firstlimo.finance.data.remote.FirestoreSyncService
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.firstOrNull
@@ -14,7 +15,8 @@ import java.util.UUID
 class DebtsRepository(
     private val customerDao: CustomerDao,
     private val transactionDao: TransactionDao,
-    private val context: Context? = null
+    private val context: Context? = null,
+    private val syncService: FirestoreSyncService = FirestoreSyncService()
 ) {
     companion object {
         const val SYSTEM_CUSTOMER_NAME = "فرست ليموزين 🚖"
@@ -94,14 +96,27 @@ class DebtsRepository(
      * حفظ أو تعديل عميل (الاسم فقط هو الإجباري)
      */
     suspend fun saveCustomer(customer: CustomerEntity) {
-        customerDao.insertCustomer(customer.copy(updatedAt = System.currentTimeMillis()))
+        val updated = customer.copy(updatedAt = System.currentTimeMillis())
+        customerDao.insertCustomer(updated)
+        try {
+            syncService.uploadCustomer(customer.userId, updated)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     /**
      * حذف عميل
      */
-    suspend fun deleteCustomer(customerId: String) {
+    suspend fun deleteCustomer(customerId: String, userId: String = "") {
         customerDao.softDeleteCustomer(customerId)
+        if (userId.isNotBlank()) {
+            try {
+                syncService.uploadCustomer(userId, CustomerEntity(id = customerId, userId = userId, name = "", isDeleted = true))
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
     }
 
     /**
@@ -142,10 +157,17 @@ class DebtsRepository(
             transactionDao.insertTransaction(finEntity)
         }
 
-        customerDao.insertDebtTransaction(transaction.copy(
+        val updatedTx = transaction.copy(
             linkedFinancialTransactionId = linkedFinId,
             updatedAt = System.currentTimeMillis()
-        ))
+        )
+        customerDao.insertDebtTransaction(updatedTx)
+
+        try {
+            syncService.uploadDebtTransaction(transaction.userId, updatedTx)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     /**
@@ -155,6 +177,11 @@ class DebtsRepository(
         customerDao.softDeleteDebtTransaction(transaction.id)
         if (!transaction.linkedFinancialTransactionId.isNullOrBlank()) {
             transactionDao.softDeleteTransaction(transaction.linkedFinancialTransactionId)
+        }
+        try {
+            syncService.uploadDebtTransaction(transaction.userId, transaction.copy(isDeleted = true, updatedAt = System.currentTimeMillis()))
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 

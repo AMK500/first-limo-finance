@@ -1,12 +1,12 @@
 package com.firstlimo.finance.ui.viewmodel
 
-import android.app.Activity
 import android.app.Application
 import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.firstlimo.finance.data.remote.AuthState
 import com.firstlimo.finance.data.remote.FirebaseAuthService
+import com.google.firebase.auth.AuthCredential
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -24,56 +24,65 @@ class AuthViewModel(
     val currentUserId: String?
         get() = authService.currentUserId ?: prefs.getString("local_user_id", null)
 
-    val currentPhoneNumber: String?
-        get() = authService.currentPhoneNumber ?: prefs.getString("local_phone_number", null)
+    val currentUserEmail: String?
+        get() = authService.currentUserEmail ?: prefs.getString("local_user_email", null)
+
+    val currentUserName: String?
+        get() = authService.currentDisplayName ?: prefs.getString("local_user_name", null)
 
     val isAuthenticated: Boolean
         get() = currentUserId != null
 
     init {
         val uid = currentUserId
-        val phone = currentPhoneNumber
+        val email = currentUserEmail
+        val name = currentUserName
         if (uid != null) {
-            _authState.value = AuthState.Success(uid, phone ?: "")
+            _authState.value = AuthState.Success(uid, email ?: "", name ?: "")
         }
     }
 
-    fun loginLocallyWithPhone(phoneNumber: String) {
-        val cleanPhone = phoneNumber.trim()
-        val uid = "user_$cleanPhone"
+    /**
+     * تسجيل الدخول المباشر بحساب Google عبر Firebase Credential
+     */
+    fun signInWithGoogleCredential(credential: AuthCredential) {
+        viewModelScope.launch {
+            authService.signInWithGoogleCredential(credential).collect { state ->
+                _authState.value = state
+                if (state is AuthState.Success) {
+                    prefs.edit()
+                        .putString("local_user_id", state.userId)
+                        .putString("local_user_email", state.email)
+                        .putString("local_user_name", state.displayName)
+                        .apply()
+                }
+            }
+        }
+    }
+
+    /**
+     * حفظ جلسة حساب Google محلياً لدعم العمل حتى بدون اتصال
+     */
+    fun loginLocallyWithGoogle(email: String, displayName: String, uid: String) {
         prefs.edit()
             .putString("local_user_id", uid)
-            .putString("local_phone_number", cleanPhone)
+            .putString("local_user_email", email)
+            .putString("local_user_name", displayName)
             .apply()
-        _authState.value = AuthState.Success(uid, cleanPhone)
+        _authState.value = AuthState.Success(uid, email, displayName)
     }
 
-    fun sendVerificationCode(activity: Activity, phoneNumber: String) {
-        viewModelScope.launch {
-            authService.sendOtp(activity, phoneNumber).collect { state ->
-                _authState.value = state
-                if (state is AuthState.Success) {
-                    prefs.edit()
-                        .putString("local_user_id", state.userId)
-                        .putString("local_phone_number", state.phoneNumber)
-                        .apply()
-                }
-            }
-        }
-    }
-
-    fun verifyCode(code: String) {
-        viewModelScope.launch {
-            authService.verifyOtp(code).collect { state ->
-                _authState.value = state
-                if (state is AuthState.Success) {
-                    prefs.edit()
-                        .putString("local_user_id", state.userId)
-                        .putString("local_phone_number", state.phoneNumber)
-                        .apply()
-                }
-            }
-        }
+    /**
+     * خيار الدخول كضيف محلياً دون مزامنة سحابية (إذا لم يرغب المستخدم بتسجيل إيميل)
+     */
+    fun loginAsGuest() {
+        val guestId = "guest_user"
+        prefs.edit()
+            .putString("local_user_id", guestId)
+            .putString("local_user_email", "حساب محلي")
+            .putString("local_user_name", "مستخدم محلي")
+            .apply()
+        _authState.value = AuthState.Success(guestId, "حساب محلي", "مستخدم محلي")
     }
 
     fun signOut() {

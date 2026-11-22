@@ -14,8 +14,8 @@ android {
         applicationId = "com.firstlimo.finance"
         minSdk = 24
         targetSdk = 35
-        versionCode = 11
-        versionName = "2.0.0"
+        versionCode = 12
+        versionName = "2.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -85,10 +85,11 @@ dependencies {
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
 
-    // Firebase
+    // Firebase & Google Auth
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth.ktx)
     implementation(libs.firebase.firestore.ktx)
+    implementation(libs.play.services.auth)
 
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)

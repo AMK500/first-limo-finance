@@ -40,6 +40,7 @@ fun DebtsScreen(
     val formatter = DecimalFormat("#,##0.00")
 
     Scaffold(
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = { showAddDialog = true },
