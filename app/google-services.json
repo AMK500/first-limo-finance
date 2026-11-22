@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "123456789012",
+    "project_number": "596107741265",
     "project_id": "first-limo-finance",
-    "storage_bucket": "first-limo-finance.appspot.com"
+    "storage_bucket": "first-limo-finance.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:123456789012:android:abcdef0123456789",
+        "mobilesdk_app_id": "1:596107741265:android:5c9a6e209b42a249c1d070",
         "android_client_info": {
           "package_name": "com.firstlimo.finance"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyFakeKeyPlaceholderForBuild000000"
+          "current_key": "AIzaSyBFlqvMu3qATHsNzn3qchxIgen6xEhdH2Y"
         }
       ],
       "services": {
