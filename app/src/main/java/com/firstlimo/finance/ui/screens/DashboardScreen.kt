@@ -30,13 +30,11 @@ import com.firstlimo.finance.ui.viewmodel.FinancialViewModel
 fun DashboardScreen(
     viewModel: FinancialViewModel,
     onNavigateToHistory: () -> Unit,
-    onNavigateToAnalytics: () -> Unit,
-    onNavigateToSettings: () -> Unit
+    onNavigateToAnalytics: () -> Unit = {},
+    onNavigateToSettings: () -> Unit = {}
 ) {
     val summary by viewModel.financialSummary.collectAsState()
     val transactions by viewModel.transactions.collectAsState()
-    val isOnline by viewModel.isOnline.collectAsState()
-    val isSyncing by viewModel.isSyncing.collectAsState()
     val availableUpdate by viewModel.availableUpdate.collectAsState()
     val downloadProgress by viewModel.downloadProgress.collectAsState()
 
@@ -52,57 +50,6 @@ fun DashboardScreen(
 
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        topBar = {
-            TopAppBar(
-                title = {
-                    Column {
-                        Text(
-                            text = "فرست ليموزين",
-                            fontSize = 19.sp,
-                            fontWeight = FontWeight.ExtraBold,
-                            color = TextPrimary
-                        )
-                        Text(
-                            text = "الإدارة المالية وحساب النقدية",
-                            fontSize = 11.sp,
-                            color = TextSecondary
-                        )
-                    }
-                },
-                actions = {
-                    SyncStatusBadge(
-                        isOnline = isOnline,
-                        isSyncing = isSyncing,
-                        onManualSync = { viewModel.syncUnsynced() }
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    IconButton(onClick = onNavigateToHistory) {
-                        Icon(
-                            imageVector = Icons.Default.ReceiptLong,
-                            contentDescription = "سجل العمليات",
-                            tint = TextPrimary
-                        )
-                    }
-                    IconButton(onClick = onNavigateToAnalytics) {
-                        Icon(
-                            imageVector = Icons.Default.Analytics,
-                            contentDescription = "الرسوم البيانية",
-                            tint = AccentGold
-                        )
-                    }
-                    IconButton(onClick = onNavigateToSettings) {
-                        Icon(
-                            imageVector = Icons.Default.Settings,
-                            contentDescription = "الإعدادات",
-                            tint = TextPrimary
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = DarkSurface
-                )
-            )
-        },
         containerColor = DarkBackground
     ) { paddingValues ->
         LazyColumn(
@@ -112,7 +59,7 @@ fun DashboardScreen(
                 .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            item { Spacer(modifier = Modifier.height(4.dp)) }
+            item { Spacer(modifier = Modifier.height(10.dp)) }
 
             // 1. بطاقة صافي حساب فرست ليموزين (الحساب النهائي للشركة)
             item {
