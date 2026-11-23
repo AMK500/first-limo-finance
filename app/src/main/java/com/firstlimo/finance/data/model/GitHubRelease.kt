@@ -27,6 +27,9 @@ data class GitHubRelease(
     @SerializedName("versionName")
     val versionName: String? = null,
 
+    @SerializedName("versionCode")
+    val versionCode: Int? = null,
+
     @SerializedName("downloadUrl")
     val directDownloadUrl: String? = null
 ) {

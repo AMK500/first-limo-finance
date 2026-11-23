@@ -35,9 +35,22 @@ class FinancialViewModel(application: Application) : AndroidViewModel(applicatio
     val currentAppVersion: String
         get() = try {
             val pInfo = getApplication<Application>().packageManager.getPackageInfo(getApplication<Application>().packageName, 0)
-            pInfo.versionName ?: "2.0.0"
+            pInfo.versionName ?: "2.10"
         } catch (e: Exception) {
-            "2.1.0"
+            "2.10"
+        }
+
+    val currentVersionCode: Long
+        get() = try {
+            val pInfo = getApplication<Application>().packageManager.getPackageInfo(getApplication<Application>().packageName, 0)
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                pInfo.longVersionCode
+            } else {
+                @Suppress("DEPRECATION")
+                pInfo.versionCode.toLong()
+            }
+        } catch (e: Exception) {
+            22L
         }
 
     // هوية المستخدم الحالي
@@ -205,7 +218,7 @@ class FinancialViewModel(application: Application) : AndroidViewModel(applicatio
     // فحص التحديثات من GitHub
     fun checkForAppUpdates(isManualCheck: Boolean = false) {
         viewModelScope.launch {
-            val release = updateService.checkForUpdate(currentAppVersion)
+            val release = updateService.checkForUpdate(currentAppVersion, currentVersionCode)
             if (release != null) {
                 val dismissedVersion = prefs.getString("dismissed_update_version", null)
                 if (!isManualCheck && dismissedVersion == release.getCleanVersion()) {

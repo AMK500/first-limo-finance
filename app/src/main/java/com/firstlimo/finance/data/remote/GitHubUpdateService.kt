@@ -26,13 +26,19 @@ class GitHubUpdateService(
     /**
      * التحقق من وجود إصدار جديد عبر update.json أو GitHub Releases API
      */
-    suspend fun checkForUpdate(currentVersionName: String): GitHubRelease? = withContext(Dispatchers.IO) {
-        // 1. محاولة الفحص أولاً عبر update.json المباشر في الفرع الرئيسي
+    suspend fun checkForUpdate(
+        currentVersionName: String,
+        currentVersionCode: Long = 0L
+    ): GitHubRelease? = withContext(Dispatchers.IO) {
+        // 1. محاولة الفحص أولاً عبر update.json المباشر في الفرع الرئيسي مع منع التخزين المؤقت
         try {
-            val rawJsonUrl = "https://raw.githubusercontent.com/$owner/$repo/main/update.json"
+            val timestamp = System.currentTimeMillis()
+            val rawJsonUrl = "https://raw.githubusercontent.com/$owner/$repo/main/update.json?nocache=$timestamp"
             val rawRequest = Request.Builder()
                 .url(rawJsonUrl)
                 .header("User-Agent", "FirstLimoFinanceApp")
+                .header("Cache-Control", "no-cache, no-store, must-revalidate")
+                .header("Pragma", "no-cache")
                 .build()
 
             val rawResponse = client.newCall(rawRequest).execute()
@@ -41,9 +47,12 @@ class GitHubUpdateService(
                 if (!jsonBody.isNullOrBlank()) {
                     val releaseFromJson = gson.fromJson(jsonBody, GitHubRelease::class.java)
                     if (releaseFromJson != null) {
-                        val remoteVersion = releaseFromJson.getCleanVersion()
-                        if (isNewerVersion(remoteVersion, currentVersionName) && releaseFromJson.getApkDownloadUrl() != null) {
+                        val isNewer = isNewerRelease(releaseFromJson, currentVersionName, currentVersionCode)
+                        if (isNewer && releaseFromJson.getApkDownloadUrl() != null) {
                             return@withContext releaseFromJson
+                        } else if (!isNewer) {
+                            // إذا أكد update.json أننا على أحدث إصدار بالفعل، ننهي الفحص فوراً لمنع أي تضارب
+                            return@withContext null
                         }
                     }
                 }
@@ -59,6 +68,7 @@ class GitHubUpdateService(
                 .url(url)
                 .header("Accept", "application/vnd.github.v3+json")
                 .header("User-Agent", "FirstLimoFinanceApp")
+                .header("Cache-Control", "no-cache")
                 .build()
 
             val response = client.newCall(request).execute()
@@ -67,9 +77,9 @@ class GitHubUpdateService(
             val jsonString = response.body?.string() ?: return@withContext null
             val release = gson.fromJson(jsonString, GitHubRelease::class.java) ?: return@withContext null
 
-            // مقارنة أرقام الإصدارات
-            val remoteVersion = release.getCleanVersion()
-            if (isNewerVersion(remoteVersion, currentVersionName) && release.getApkDownloadUrl() != null) {
+            // مقارنة الإصدارات بدقة
+            val isNewer = isNewerRelease(release, currentVersionName, currentVersionCode)
+            if (isNewer && release.getApkDownloadUrl() != null) {
                 return@withContext release
             }
             null
@@ -80,10 +90,37 @@ class GitHubUpdateService(
     }
 
     /**
-     * مقارنة الإصدار السحابي بالإصدار الحالي (مثلاً 1.1.0 أكبر من 1.0.0)
+     * مقارنة الإصدار السحابي بالإصدار الحالي مع مراعاة رقم البناء (versionCode) والاسم
      */
-    private fun isNewerVersion(remote: String, current: String): Boolean {
+    private fun isNewerRelease(
+        release: GitHubRelease,
+        currentVersionName: String,
+        currentVersionCode: Long
+    ): Boolean {
+        // 1. الفحص الحاسم عبر versionCode إذا كان متاحاً
+        val remoteCode = release.versionCode
+        if (remoteCode != null && remoteCode > 0 && currentVersionCode > 0) {
+            return remoteCode > currentVersionCode
+        }
+
+        // 2. الفحص عبر أسماء الإصدارات
+        val remoteVersion = release.getCleanVersion()
+        return isNewerVersionString(remoteVersion, currentVersionName)
+    }
+
+    private fun isNewerVersionString(remote: String, current: String): Boolean {
         try {
+            val rClean = remote.lowercase().trim().removePrefix("v").trim()
+            val cClean = current.lowercase().trim().removePrefix("v").trim()
+
+            // التطابق الكامل المباشر
+            if (rClean == cClean) return false
+
+            // معالجة تشابه 2.10 و 2.1.0
+            if ((rClean == "2.10" && cClean == "2.1.0") || (rClean == "2.1.0" && cClean == "2.10")) {
+                return false
+            }
+
             fun normalize(v: String): List<Int> {
                 val clean = v.replace(Regex("""[^\d.]"""), "")
                 return clean.split(".")
@@ -97,8 +134,8 @@ class GitHubUpdateService(
                     }
             }
 
-            val remoteParts = normalize(remote)
-            val currentParts = normalize(current)
+            val remoteParts = normalize(rClean)
+            val currentParts = normalize(cClean)
 
             if (remoteParts == currentParts) return false
 
