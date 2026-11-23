@@ -97,13 +97,13 @@ class GitHubUpdateService(
         currentVersionName: String,
         currentVersionCode: Long
     ): Boolean {
-        // 1. الفحص الحاسم عبر versionCode إذا كان متاحاً
-        val remoteCode = release.versionCode
+        // 1. الفحص الحاسم والمطلق عبر versionCode (رقم البناء الرقمي للأندرويد)
+        val remoteCode = release.getEffectiveVersionCode()
         if (remoteCode != null && remoteCode > 0 && currentVersionCode > 0) {
             return remoteCode > currentVersionCode
         }
 
-        // 2. الفحص عبر أسماء الإصدارات
+        // 2. الفحص عبر أسماء الإصدارات كخطة احتياطية
         val remoteVersion = release.getCleanVersion()
         return isNewerVersionString(remoteVersion, currentVersionName)
     }
@@ -116,26 +116,22 @@ class GitHubUpdateService(
             // التطابق الكامل المباشر
             if (rClean == cClean) return false
 
-            // معالجة تشابه 2.10 و 2.1.0
-            if ((rClean == "2.10" && cClean == "2.1.0") || (rClean == "2.1.0" && cClean == "2.10")) {
+            // معالجة تشابه 2.10 و 2.1.0 و 2.1
+            val synonyms = setOf("2.10", "2.1.0", "2.1")
+            if (rClean in synonyms && cClean in synonyms) {
                 return false
             }
 
-            fun normalize(v: String): List<Int> {
+            // تقسيم الأرقام الطبيعي: "2.08" -> [2, 8], "2.09" -> [2, 9], "2.10" -> [2, 10]
+            fun parseParts(v: String): List<Int> {
                 val clean = v.replace(Regex("""[^\d.]"""), "")
                 return clean.split(".")
                     .filter { it.isNotBlank() }
-                    .flatMap { part ->
-                        if (part.length > 1 && part.startsWith("0")) {
-                            listOf(0, part.substring(1).toIntOrNull() ?: 0)
-                        } else {
-                            listOf(part.toIntOrNull() ?: 0)
-                        }
-                    }
+                    .map { it.toIntOrNull() ?: 0 }
             }
 
-            val remoteParts = normalize(rClean)
-            val currentParts = normalize(cClean)
+            val remoteParts = parseParts(rClean)
+            val currentParts = parseParts(cClean)
 
             if (remoteParts == currentParts) return false
 

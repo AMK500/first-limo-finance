@@ -52,6 +52,14 @@ data class GitHubRelease(
         return match ?: raw.replace(Regex("""[^\d.]"""), "").trim().ifEmpty { "1.6.0" }
     }
 
+    // استخراج رقم البناء الرقمي (versionCode) إما من الحقل المباشر أو من الوصف أو الاسم
+    fun getEffectiveVersionCode(): Long? {
+        if (versionCode != null && versionCode > 0) return versionCode.toLong()
+        val regex = Regex("""(?:versionCode|build|vc)[:=\s]+(\d+)""", RegexOption.IGNORE_CASE)
+        val match = regex.find(body) ?: regex.find(name) ?: regex.find(tagName)
+        return match?.groupValues?.get(1)?.toLongOrNull()
+    }
+
     // رقم الإصدار للعرض
     fun getDisplayVersion(): String {
         val clean = getCleanVersion()
